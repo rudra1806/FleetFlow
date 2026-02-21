@@ -37,13 +37,13 @@ app.use("/api/maintenance", maintenanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
-// P2 & P3 routes — uncomment when they push their branches
-// const driverRoutes = require("./routes/driver.routes");
-// const tripRoutes = require("./routes/trip.routes");
-// const expenseRoutes = require("./routes/expense.routes");
-// app.use("/api/drivers", driverRoutes);
-// app.use("/api/trips", tripRoutes);
-// app.use("/api/expenses", expenseRoutes);
+// P2 & P3 routes
+const driverRoutes = require("./routes/driver.routes");
+const tripRoutes = require("./routes/trip.routes");
+const expenseRoutes = require("./routes/expense.routes");
+app.use("/api/drivers", driverRoutes);
+app.use("/api/trips", tripRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 // Global error handler (must be after routes)
 app.use(errorHandler);

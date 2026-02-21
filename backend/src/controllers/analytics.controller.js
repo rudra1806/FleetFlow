@@ -7,18 +7,8 @@ async function getFuelEfficiency(req, res) {
     try {
         const results = [];
 
-        // Try to get trip and expense data
-        let Trip, Expense;
-        try {
-            Trip = require("../models/trip.model");
-        } catch (e) {
-            Trip = null;
-        }
-        try {
-            Expense = require("../models/expense.model");
-        } catch (e) {
-            Expense = null;
-        }
+        const Trip = require("../models/trip.model");
+        const Expense = require("../models/expense.model");
 
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type currentOdometer"
@@ -108,12 +98,6 @@ async function getFuelEfficiency(req, res) {
 // GET /api/analytics/vehicle-roi — ROI per vehicle
 async function getVehicleROI(req, res) {
     try {
-        let Expense;
-        try {
-            Expense = require("../models/expense.model");
-        } catch (e) {
-            Expense = null;
-        }
 
         const vehicles = await Vehicle.find().select(
             "name licensePlate type acquisitionCost"
@@ -153,8 +137,8 @@ async function getVehicleROI(req, res) {
             const roi =
                 acquisitionCost > 0
                     ? parseFloat(
-                          ((-(totalOperationalCost) / acquisitionCost) * 100).toFixed(2)
-                      )
+                        ((-(totalOperationalCost) / acquisitionCost) * 100).toFixed(2)
+                    )
                     : 0;
 
             results.push({
@@ -191,17 +175,6 @@ async function getVehicleROI(req, res) {
 // GET /api/analytics/cost-per-km — operational cost per km per vehicle
 async function getCostPerKm(req, res) {
     try {
-        let Trip, Expense;
-        try {
-            Trip = require("../models/trip.model");
-        } catch (e) {
-            Trip = null;
-        }
-        try {
-            Expense = require("../models/expense.model");
-        } catch (e) {
-            Expense = null;
-        }
 
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type"
@@ -347,7 +320,6 @@ async function exportReport(req, res) {
 
             case "trips": {
                 try {
-                    const Trip = require("../models/trip.model");
                     const trips = await Trip.find()
                         .populate("vehicle", "name licensePlate")
                         .populate("driver", "name")
@@ -376,8 +348,8 @@ async function exportReport(req, res) {
                         "trips_report.csv"
                     );
                 } catch (e) {
-                    return res.status(400).json({
-                        message: "Trip module not available yet",
+                    return res.status(500).json({
+                        message: "Internal server error during trip export",
                         status: false,
                     });
                 }
@@ -385,7 +357,6 @@ async function exportReport(req, res) {
 
             case "expenses": {
                 try {
-                    const Expense = require("../models/expense.model");
                     const expenses = await Expense.find()
                         .populate("vehicle", "name licensePlate")
                         .lean();
@@ -410,8 +381,8 @@ async function exportReport(req, res) {
                         "expenses_report.csv"
                     );
                 } catch (e) {
-                    return res.status(400).json({
-                        message: "Expense module not available yet",
+                    return res.status(500).json({
+                        message: "Internal server error during expense export",
                         status: false,
                     });
                 }

@@ -31,6 +31,7 @@ const VEHICLE_STATUS_ARRAY = Object.values(VEHICLE_STATUS);
 
 const DRIVER_STATUS = {
     ON_DUTY: "on_duty",
+    ON_TRIP: "on_trip",
     OFF_DUTY: "off_duty",
     SUSPENDED: "suspended",
 };

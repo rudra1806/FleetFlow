@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { DRIVER_STATUS_ARRAY } = require("../utils/constants");
 
 const driverSchema = new mongoose.Schema(
   {
@@ -41,7 +42,10 @@ const driverSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["on_duty", "on_trip", "off_duty", "suspended"],
+      enum: {
+        values: DRIVER_STATUS_ARRAY,
+        message: "{VALUE} is not a valid driver status",
+      },
       default: "on_duty",
     },
 
@@ -59,6 +63,11 @@ const driverSchema = new mongoose.Schema(
     completedTrips: {
       type: Number,
       default: 0,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   { timestamps: true }
