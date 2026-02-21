@@ -464,12 +464,12 @@ Access is enforced at **two layers** — backend `authorize()` middleware and fr
    [Created] → Available ◄──────────── On Trip
                     │                       
                     │── Maintenance Created ─► In Shop
-                    │                           │
+                    │                            │
                     │◄── Maintenance Completed ──┘
                     │
                     └── Manual Toggle ──► Retired
-                                            │
-                    ◄── Manual Toggle ───────┘
+                    │                         │
+                    │◄── Manual Toggle ───────┘
 ```
 
 ---
