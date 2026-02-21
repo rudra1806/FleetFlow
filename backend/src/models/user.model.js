@@ -1,64 +1,67 @@
-const mongoose = require("mongoose")
-const bcrypt = require("bcryptjs")
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const { USER_ROLES_ARRAY } = require("../utils/constants");
 
-const userSchema = new mongoose.Schema({
-    email:
+const userSchema = new mongoose.Schema(
     {
-        type: String,
-        required: [true,
-            "Email is Required"],
-        trim: true,
-        lowercase: true,
-        match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-            "Invalid Email Format"],
-        unique: [true, "Email Already Exists"]
+        name: {
+            type: String,
+            required: [true, "Name is required"],
+            trim: true,
+        },
+        email: {
+            type: String,
+            required: [true, "Email is required"],
+            trim: true,
+            lowercase: true,
+            match: [
+                /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                "Invalid email format",
+            ],
+            unique: true,
+        },
+        password: {
+            type: String,
+            required: [true, "Password is required"],
+            minlength: [6, "Password must be at least 6 characters long"],
+            select: false,
+        },
+        role: {
+            type: String,
+            enum: {
+                values: USER_ROLES_ARRAY,
+                message: "{VALUE} is not a valid role",
+            },
+            default: "dispatcher",
+        },
+        phone: {
+            type: String,
+            trim: true,
+            default: null,
+        },
+        isActive: {
+            type: Boolean,
+            default: true,
+        },
     },
-    name:
     {
-        type: String,
-        required: [true,
-            "Name is Required"],
-        trim: true,
-        lowercase: true,
-    },
-    password:
-    {
-        type: String,
-        required: [true,
-            "Password is Required"],
-        trim: true,
-        minlength: [6,
-            "Password must be at least 6 characters long"],
-        select: false
-    },
-    systemUser: {
-        type: Boolean,
-        default: false,
-        immutable: true,
-        select: false
-    }
-},
-    {
-        timestamps: true
+        timestamps: true,
     }
 );
 
-
-userSchema.pre('save', async function (next) {
-
-    if (this.isModified('password')) {
+// Hash password before saving
+userSchema.pre("save", async function (next) {
+    if (this.isModified("password")) {
         this.password = await bcrypt.hash(this.password, 10);
     }
+    next();
+});
 
-    return
-})
-
+// Compare password method
 userSchema.methods.comparePassword = async function (password) {
-    // console.log(password, this.password)
-    return await bcrypt.compare(password, this.password)
-}
+    return await bcrypt.compare(password, this.password);
+};
 
+const User = mongoose.model("User", userSchema);
 
-const userMode = mongoose.model('User', userSchema)
-
-module.exports = userMode
+module.exports = User;

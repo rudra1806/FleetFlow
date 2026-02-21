@@ -1,20 +1,35 @@
-const express = require("express")
-const cors = require("cors")
-const cookieParser = require("cookie-parser")
-const app = express()
-app.use(cors({ origin: ["http://localhost:5173", "http://localhost:5174"], credentials: true }))
+const express = require("express");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const errorHandler = require("./middleware/error.middleware");
 
-app.use(express.json())
-app.use(cookieParser())
+const app = express();
 
+// Middleware
+app.use(
+    cors({
+        origin: ["http://localhost:5173", "http://localhost:5174"],
+        credentials: true,
+    })
+);
+app.use(express.json());
+app.use(cookieParser());
+
+// Health check
 app.get("/", (req, res) => {
-    res.send("Welcome to Bank API 🏦");
+    res.json({
+        message: "Welcome to FleetFlow API 🚛",
+        version: "1.0.0",
+        status: true,
+    });
 });
 
-const authRoutes = require("./routes/auth.routes")
+// Routes
+const authRoutes = require("./routes/auth.routes");
 
+app.use("/api/auth", authRoutes);
 
-app.use("/api/auth", authRoutes)
+// Global error handler (must be after routes)
+app.use(errorHandler);
 
-
-module.exports = app
+module.exports = app;
