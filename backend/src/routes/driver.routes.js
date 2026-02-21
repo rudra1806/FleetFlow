@@ -25,6 +25,14 @@ router.post(
     driverController.createDriver
 );
 
+// GET /api/drivers/:id/performance — driver performance profile
+router.get(
+    "/:id/performance",
+    authMiddleware,
+    authorize(...allRoles, "financial_analyst"),
+    driverController.getDriverPerformance
+);
+
 // GET /api/drivers/:id — single driver
 router.get(
     "/:id",

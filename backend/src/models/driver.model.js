@@ -30,7 +30,7 @@ const driverSchema = new mongoose.Schema(
     licenseExpiry: {
       type: Date,
       required: true,
-      index: true, // for compliance checks
+      index: true,
     },
 
     safetyScore: {
@@ -47,6 +47,7 @@ const driverSchema = new mongoose.Schema(
         message: "{VALUE} is not a valid driver status",
       },
       default: "on_duty",
+      index: true,
     },
 
     assignedVehicle: {
@@ -73,21 +74,7 @@ const driverSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
-// 🔹 Virtual: Completion Rate (%)
-driverSchema.virtual("completionRate").get(function () {
-  if (this.totalTrips === 0) return 0;
-  return ((this.completedTrips / this.totalTrips) * 100).toFixed(2);
-});
-
-
-// 🔹 Virtual: License Validity
-driverSchema.virtual("isLicenseValid").get(function () {
-  return this.licenseExpiry > new Date();
-});
-
-
-// 🔹 Prevent manual setting of on_trip without assignment
+// Prevent manual setting of on_trip without assignment
 driverSchema.pre("save", function (next) {
   if (this.status === "on_trip" && !this.assignedVehicle) {
     return next(
@@ -97,10 +84,18 @@ driverSchema.pre("save", function (next) {
   next();
 });
 
+// Virtual: License Validity
+driverSchema.virtual("isLicenseValid").get(function () {
+  return this.licenseExpiry > new Date();
+});
 
-// 🔹 Include virtuals when converting to JSON
+// Virtual: Completion Rate
+driverSchema.virtual("completionRate").get(function () {
+  if (this.totalTrips === 0) return 0;
+  return ((this.completedTrips / this.totalTrips) * 100).toFixed(2);
+});
+
 driverSchema.set("toJSON", { virtuals: true });
 driverSchema.set("toObject", { virtuals: true });
-
 
 module.exports = mongoose.model("Driver", driverSchema);
