@@ -2,23 +2,40 @@ const Vehicle = require("../models/vehicle.model");
 const Maintenance = require("../models/maintenance.model");
 const exportService = require("../services/export.service");
 
+// Safely import Trip & Expense models (may not exist yet in early phases)
+let Trip, Expense;
+try {
+    Trip = require("../models/trip.model");
+} catch (e) {
+    Trip = null;
+}
+try {
+    Expense = require("../models/expense.model");
+} catch (e) {
+    Expense = null;
+}
+
+// Helper: build a date range filter object from ?from= and ?to= query params
+function buildDateRange(req, dateField) {
+    const filter = {};
+    if (req.query.from) {
+        const from = new Date(req.query.from);
+        if (!isNaN(from)) filter[dateField] = { ...filter[dateField], $gte: from };
+    }
+    if (req.query.to) {
+        const to = new Date(req.query.to);
+        if (!isNaN(to)) filter[dateField] = { ...filter[dateField], $lte: to };
+    }
+    return filter;
+}
+
 // GET /api/analytics/fuel-efficiency — km/L per vehicle
+// Optional query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
 async function getFuelEfficiency(req, res) {
     try {
         const results = [];
-
-        // Try to get trip and expense data
-        let Trip, Expense;
-        try {
-            Trip = require("../models/trip.model");
-        } catch (e) {
-            Trip = null;
-        }
-        try {
-            Expense = require("../models/expense.model");
-        } catch (e) {
-            Expense = null;
-        }
+        const dateFilterTrip = buildDateRange(req, "startDate");
+        const dateFilterExpense = buildDateRange(req, "date");
 
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type currentOdometer"
@@ -28,7 +45,6 @@ async function getFuelEfficiency(req, res) {
             let totalKm = 0;
             let totalLiters = 0;
 
-            // Get total km from completed trips
             if (Trip) {
                 const tripAgg = await Trip.aggregate([
                     {
@@ -37,6 +53,7 @@ async function getFuelEfficiency(req, res) {
                             status: "completed",
                             endOdometer: { $exists: true, $gt: 0 },
                             startOdometer: { $exists: true },
+                            ...dateFilterTrip,
                         },
                     },
                     {
@@ -51,7 +68,6 @@ async function getFuelEfficiency(req, res) {
                 totalKm = tripAgg.length > 0 ? tripAgg[0].totalKm : 0;
             }
 
-            // Get total fuel liters from expense records
             if (Expense) {
                 const fuelAgg = await Expense.aggregate([
                     {
@@ -59,6 +75,7 @@ async function getFuelEfficiency(req, res) {
                             vehicle: vehicle._id,
                             type: "fuel",
                             liters: { $exists: true, $gt: 0 },
+                            ...dateFilterExpense,
                         },
                     },
                     {
@@ -88,7 +105,6 @@ async function getFuelEfficiency(req, res) {
             });
         }
 
-        // Sort by efficiency descending
         results.sort((a, b) => b.fuelEfficiency - a.fuelEfficiency);
 
         res.status(200).json({
@@ -106,14 +122,11 @@ async function getFuelEfficiency(req, res) {
 }
 
 // GET /api/analytics/vehicle-roi — ROI per vehicle
+// Optional query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
 async function getVehicleROI(req, res) {
     try {
-        let Expense;
-        try {
-            Expense = require("../models/expense.model");
-        } catch (e) {
-            Expense = null;
-        }
+        const dateFilterMaint = buildDateRange(req, "serviceDate");
+        const dateFilterExpense = buildDateRange(req, "date");
 
         const vehicles = await Vehicle.find().select(
             "name licensePlate type acquisitionCost"
@@ -122,19 +135,17 @@ async function getVehicleROI(req, res) {
         const results = [];
 
         for (const vehicle of vehicles) {
-            // Total maintenance cost
             const maintAgg = await Maintenance.aggregate([
-                { $match: { vehicle: vehicle._id } },
+                { $match: { vehicle: vehicle._id, ...dateFilterMaint } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
             ]);
             const maintenanceCost = maintAgg.length > 0 ? maintAgg[0].total : 0;
 
-            // Total fuel cost
             let fuelCost = 0;
             let otherExpenses = 0;
             if (Expense) {
                 const expAgg = await Expense.aggregate([
-                    { $match: { vehicle: vehicle._id } },
+                    { $match: { vehicle: vehicle._id, ...dateFilterExpense } },
                     {
                         $group: {
                             _id: "$type",
@@ -150,11 +161,12 @@ async function getVehicleROI(req, res) {
 
             const totalOperationalCost = maintenanceCost + fuelCost + otherExpenses;
             const acquisitionCost = vehicle.acquisitionCost || 0;
+            const revenue = 0; // No revenue model yet — placeholder for future trip billing
             const roi =
                 acquisitionCost > 0
                     ? parseFloat(
-                          ((-(totalOperationalCost) / acquisitionCost) * 100).toFixed(2)
-                      )
+                        ((-(totalOperationalCost) / acquisitionCost) * 100).toFixed(2)
+                    )
                     : 0;
 
             results.push({
@@ -189,19 +201,12 @@ async function getVehicleROI(req, res) {
 }
 
 // GET /api/analytics/cost-per-km — operational cost per km per vehicle
+// Optional query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
 async function getCostPerKm(req, res) {
     try {
-        let Trip, Expense;
-        try {
-            Trip = require("../models/trip.model");
-        } catch (e) {
-            Trip = null;
-        }
-        try {
-            Expense = require("../models/expense.model");
-        } catch (e) {
-            Expense = null;
-        }
+        const dateFilterTrip = buildDateRange(req, "startDate");
+        const dateFilterMaint = buildDateRange(req, "serviceDate");
+        const dateFilterExpense = buildDateRange(req, "date");
 
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type"
@@ -210,7 +215,6 @@ async function getCostPerKm(req, res) {
         const results = [];
 
         for (const vehicle of vehicles) {
-            // Total km driven
             let totalKm = 0;
             if (Trip) {
                 const tripAgg = await Trip.aggregate([
@@ -220,6 +224,7 @@ async function getCostPerKm(req, res) {
                             status: "completed",
                             endOdometer: { $exists: true, $gt: 0 },
                             startOdometer: { $exists: true },
+                            ...dateFilterTrip,
                         },
                     },
                     {
@@ -234,9 +239,8 @@ async function getCostPerKm(req, res) {
                 totalKm = tripAgg.length > 0 ? tripAgg[0].totalKm : 0;
             }
 
-            // Total fuel + maintenance cost
             const maintAgg = await Maintenance.aggregate([
-                { $match: { vehicle: vehicle._id } },
+                { $match: { vehicle: vehicle._id, ...dateFilterMaint } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
             ]);
             const maintenanceCost = maintAgg.length > 0 ? maintAgg[0].total : 0;
@@ -244,7 +248,7 @@ async function getCostPerKm(req, res) {
             let fuelCost = 0;
             if (Expense) {
                 const fuelAgg = await Expense.aggregate([
-                    { $match: { vehicle: vehicle._id, type: "fuel" } },
+                    { $match: { vehicle: vehicle._id, type: "fuel", ...dateFilterExpense } },
                     { $group: { _id: null, total: { $sum: "$amount" } } },
                 ]);
                 fuelCost = fuelAgg.length > 0 ? fuelAgg[0].total : 0;
@@ -320,7 +324,6 @@ async function exportReport(req, res) {
                 const records = await Maintenance.find()
                     .populate("vehicle", "name licensePlate")
                     .lean();
-                // Flatten nested vehicle fields
                 const flat = records.map((r) => ({
                     ...r,
                     vehicleName: r.vehicle?.name || "",
@@ -346,8 +349,13 @@ async function exportReport(req, res) {
             }
 
             case "trips": {
+                if (!Trip) {
+                    return res.status(400).json({
+                        message: "Trip module is not available yet",
+                        status: false,
+                    });
+                }
                 try {
-                    const Trip = require("../models/trip.model");
                     const trips = await Trip.find()
                         .populate("vehicle", "name licensePlate")
                         .populate("driver", "name")
@@ -376,16 +384,21 @@ async function exportReport(req, res) {
                         "trips_report.csv"
                     );
                 } catch (e) {
-                    return res.status(400).json({
-                        message: "Trip module not available yet",
+                    return res.status(500).json({
+                        message: "Internal server error during trip export",
                         status: false,
                     });
                 }
             }
 
             case "expenses": {
+                if (!Expense) {
+                    return res.status(400).json({
+                        message: "Expense module is not available yet",
+                        status: false,
+                    });
+                }
                 try {
-                    const Expense = require("../models/expense.model");
                     const expenses = await Expense.find()
                         .populate("vehicle", "name licensePlate")
                         .lean();
@@ -410,8 +423,8 @@ async function exportReport(req, res) {
                         "expenses_report.csv"
                     );
                 } catch (e) {
-                    return res.status(400).json({
-                        message: "Expense module not available yet",
+                    return res.status(500).json({
+                        message: "Internal server error during expense export",
                         status: false,
                     });
                 }

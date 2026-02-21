@@ -1,0 +1,20 @@
+/* ==========================================
+   FleetFlow - Expenses Page Styles
+   ========================================== */
+
+/* ── Expense type badge ── */
+.expense-type-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    font-size: 0.85rem;
+}
+
+/* ── Amount highlight ── */
+.expense-amount {
+    font-weight: 700;
+    color: var(--warning);
+    font-size: 0.9rem;
+}

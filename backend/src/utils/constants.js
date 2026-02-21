@@ -15,6 +15,8 @@ const USER_ROLES_ARRAY = Object.values(USER_ROLES);
 const VEHICLE_TYPES = {
     TRUCK: "truck",
     VAN: "van",
+    CAR: "car",
+    BUS: "bus",
     BIKE: "bike",
 };
 
@@ -31,6 +33,7 @@ const VEHICLE_STATUS_ARRAY = Object.values(VEHICLE_STATUS);
 
 const DRIVER_STATUS = {
     ON_DUTY: "on_duty",
+    ON_TRIP: "on_trip",
     OFF_DUTY: "off_duty",
     SUSPENDED: "suspended",
 };
@@ -56,9 +59,13 @@ const MAINTENANCE_STATUS_ARRAY = Object.values(MAINTENANCE_STATUS);
 
 const SERVICE_TYPES = {
     OIL_CHANGE: "oil_change",
-    TIRE: "tire",
-    BRAKE: "brake",
-    ENGINE: "engine",
+    TIRE_ROTATION: "tire_rotation",
+    BRAKE_SERVICE: "brake_service",
+    ENGINE_REPAIR: "engine_repair",
+    TRANSMISSION: "transmission",
+    ELECTRICAL: "electrical",
+    BODY_WORK: "body_work",
+    INSPECTION: "inspection",
     GENERAL: "general",
 };
 
@@ -78,6 +85,7 @@ const FUEL_TYPES = {
     DIESEL: "diesel",
     ELECTRIC: "electric",
     CNG: "cng",
+    HYBRID: "hybrid",
 };
 
 const FUEL_TYPES_ARRAY = Object.values(FUEL_TYPES);

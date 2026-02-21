@@ -1,0 +1,81 @@
+/* ── Maintenance-specific styles ── */
+/* Relies on Vehicles.css for base styles (page layout, stats, modals, pagination, toast, filters, etc.) */
+
+/* Service type badge in table */
+.service-type {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    text-transform: capitalize;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Status badges – specific to maintenance states */
+.badge.scheduled {
+    background: rgba(100, 116, 139, 0.15);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+.badge.in_progress {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge.completed {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+/* Cost tag */
+.cost-tag {
+    font-weight: 600;
+    color: #f59e0b;
+    font-size: 0.9rem;
+}
+
+/* Table description truncate */
+.table-desc {
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* Action button – start work */
+.icon-btn.start {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.icon-btn.start:hover {
+    background: rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Action button – complete */
+.icon-btn.complete {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.icon-btn.complete:hover {
+    background: rgba(16, 185, 129, 0.25);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Results count */
+.results-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.5rem 0 1rem;
+}

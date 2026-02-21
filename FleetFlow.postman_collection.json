@@ -1,0 +1,612 @@
+{
+    "info": {
+        "name": "FleetFlow API",
+        "description": "FleetFlow — Fleet Management System API Collection",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000"
+        },
+        {
+            "key": "token",
+            "value": ""
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/auth/register",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Vaidik Rokad\",\n  \"email\": \"rokadvaidik@gmail.com\",\n  \"password\": \"123456\",\n  \"role\": \"manager\",\n  \"phone\": \"9876543210\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.token) {",
+                                    "    pm.collectionVariables.set('token', jsonData.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/auth/login",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"rokadvaidik@gmail.com\",\n  \"password\": \"123456\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Forgot Password",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/auth/forgot-password",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"rokadvaidik@gmail.com\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Profile",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/auth/me"
+                    }
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{baseUrl}}/api/auth/profile",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Vaidik Updated\",\n  \"phone\": \"9998887771\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/auth/logout"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Vehicles",
+            "item": [
+                {
+                    "name": "Create Vehicle",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/vehicles",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Truck Alpha\",\n  \"model\": \"Tata LPT 3521\",\n  \"licensePlate\": \"GJ01AB1234\",\n  \"type\": \"truck\",\n  \"maxCapacity\": 5000,\n  \"currentOdometer\": 12500,\n  \"fuelType\": \"diesel\",\n  \"acquisitionCost\": 1500000,\n  \"year\": 2022,\n  \"color\": \"White\",\n  \"region\": \"Gujarat\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get All Vehicles",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vehicles?page=1&limit=10",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vehicles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Vehicle Stats",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/vehicles/stats"
+                    }
+                },
+                {
+                    "name": "Get Vehicle By ID",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/vehicles/:id"
+                    }
+                },
+                {
+                    "name": "Update Vehicle",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{baseUrl}}/api/vehicles/:id",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Truck Alpha Updated\",\n  \"currentOdometer\": 15000\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Update Vehicle Status",
+                    "request": {
+                        "method": "PATCH",
+                        "url": "{{baseUrl}}/api/vehicles/:id/status",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"available\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Vehicle",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{baseUrl}}/api/vehicles/:id"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Drivers",
+            "item": [
+                {
+                    "name": "Create Driver",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/drivers",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Raj Kumar\",\n  \"email\": \"raj@example.com\",\n  \"phone\": \"9876543210\",\n  \"licenseNumber\": \"GJ0120210012345\",\n  \"licenseExpiry\": \"2027-12-31\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get All Drivers",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/drivers"
+                    }
+                },
+                {
+                    "name": "Get Driver By ID",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/drivers/:id"
+                    }
+                },
+                {
+                    "name": "Update Driver",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{baseUrl}}/api/drivers/:id",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"phone\": \"9998887770\",\n  \"status\": \"off_duty\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Driver",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{baseUrl}}/api/drivers/:id"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Trips",
+            "item": [
+                {
+                    "name": "Create Trip (Draft)",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/trips",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"vehicle\": \"VEHICLE_ID_HERE\",\n  \"driver\": \"DRIVER_ID_HERE\",\n  \"cargoWeight\": 2500,\n  \"origin\": \"Ahmedabad\",\n  \"destination\": \"Mumbai\",\n  \"distance\": 530\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Dispatch Trip",
+                    "request": {
+                        "method": "PATCH",
+                        "url": "{{baseUrl}}/api/trips/:id/status",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"dispatched\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Complete Trip",
+                    "request": {
+                        "method": "PATCH",
+                        "url": "{{baseUrl}}/api/trips/:id/status",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"completed\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Cancel Trip",
+                    "request": {
+                        "method": "PATCH",
+                        "url": "{{baseUrl}}/api/trips/:id/status",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"cancelled\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get All Trips",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/trips"
+                    }
+                },
+                {
+                    "name": "Get Trip By ID",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/trips/:id"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Maintenance",
+            "item": [
+                {
+                    "name": "Create Maintenance",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/maintenance",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"vehicle\": \"VEHICLE_ID_HERE\",\n  \"serviceType\": \"oil_change\",\n  \"description\": \"Regular oil change at 15000km\",\n  \"cost\": 3500,\n  \"mechanic\": \"Ramesh Auto\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get All Maintenance",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/maintenance"
+                    }
+                },
+                {
+                    "name": "Get Maintenance By ID",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/maintenance/:id"
+                    }
+                },
+                {
+                    "name": "Get Maintenance By Vehicle",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/maintenance/vehicle/:vehicleId"
+                    }
+                },
+                {
+                    "name": "Complete Maintenance",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{baseUrl}}/api/maintenance/:id",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"completed\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Expenses (Fully Tested)",
+            "item": [
+                {
+                    "name": "Create Fuel Expense",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/expenses",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"vehicle\": \"VEHICLE_ID_HERE\",\n  \"trip\": null,\n  \"type\": \"fuel\",\n  \"amount\": 5000,\n  \"liters\": 55.5,\n  \"notes\": \"Diesel refill at HP pump, Ahmedabad\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Create Insurance Expense",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/expenses",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"vehicle\": \"VEHICLE_ID_HERE\",\n  \"type\": \"insurance\",\n  \"amount\": 25000,\n  \"notes\": \"Annual insurance renewal\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Create Other Expense",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/expenses",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"vehicle\": \"VEHICLE_ID_HERE\",\n  \"type\": \"other\",\n  \"amount\": 1200,\n  \"notes\": \"Toll charges Mumbai expressway\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Create Fuel Expense (No Liters — Should FAIL)",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{baseUrl}}/api/expenses",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"vehicle\": \"VEHICLE_ID_HERE\",\n  \"type\": \"fuel\",\n  \"amount\": 3000,\n  \"notes\": \"This should fail — no liters for fuel\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Expenses By Vehicle",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/expenses/vehicle/:vehicleId?page=1&limit=10",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "expenses",
+                                "vehicle",
+                                ":vehicleId"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "type",
+                                    "value": "fuel",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Total Cost Per Vehicle",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/expenses/vehicle/:vehicleId/total"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Dashboard",
+            "item": [
+                {
+                    "name": "Get Dashboard Stats",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/dashboard"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Analytics",
+            "item": [
+                {
+                    "name": "Fuel Efficiency",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/analytics/fuel-efficiency"
+                    }
+                },
+                {
+                    "name": "Vehicle ROI",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/analytics/vehicle-roi"
+                    }
+                },
+                {
+                    "name": "Cost Per KM",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/analytics/cost-per-km"
+                    }
+                },
+                {
+                    "name": "Export Report (CSV)",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/api/analytics/export/vehicles"
+                    }
+                }
+            ]
+        }
+    ]
+}

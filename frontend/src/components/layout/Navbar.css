@@ -1,0 +1,20 @@
+.navbar {
+    height: 70px;
+    position: fixed;
+    top: 0;
+    left: 260px;
+    right: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    z-index: 99;
+    border-right: none;
+    border-top: none;
+    border-left: none;
+    border-radius: 0;
+}
+
+.navbar-left h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
