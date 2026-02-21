@@ -270,3 +270,53 @@ async function deleteExpense(req, res) {
         res.status(500).json({ message: "Internal server error", status: false });
     }
 }
+
+// GET /api/expenses — Get all expenses with optional filters
+async function getAllExpenses(req, res) {
+    try {
+        const {
+            page = 1,
+            limit = 20,
+            type,
+            vehicle,
+            sortBy = "date",
+            order = "desc",
+        } = req.query;
+
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+        const filter = {};
+
+        if (type) filter.type = type;
+        if (vehicle) filter.vehicle = vehicle;
+
+        const total = await Expense.countDocuments(filter);
+        const expenses = await Expense.find(filter)
+            .populate("vehicle", "name licensePlate type")
+            .sort({ [sortBy]: order === "asc" ? 1 : -1 })
+            .skip((pageNum - 1) * limitNum)
+            .limit(limitNum);
+
+        res.status(200).json({
+            status: true,
+            expenses,
+            pagination: {
+                total,
+                page: pageNum,
+                pages: Math.ceil(total / limitNum),
+            },
+        });
+    } catch (error) {
+        console.error("Get all expenses error:", error);
+        res.status(500).json({ message: "Internal server error", status: false });
+    }
+}
+
+module.exports = {
+    createExpense,
+    getExpensesByVehicle,
+    getTotalCostPerVehicle,
+    updateExpense,
+    deleteExpense,
+    getAllExpenses,
+};

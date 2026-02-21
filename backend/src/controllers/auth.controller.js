@@ -22,6 +22,8 @@ async function registerUser(req, res) {
             });
         }
 
+        console.log("1");
+
         // Validate role if provided
         if (role && !USER_ROLES_ARRAY.includes(role)) {
             return res.status(400).json({
@@ -30,6 +32,9 @@ async function registerUser(req, res) {
             });
         }
 
+        console.log("2");
+
+
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(409).json({
@@ -37,6 +42,7 @@ async function registerUser(req, res) {
                 status: false,
             });
         }
+        console.log("3");
 
         const user = new User({
             name,
@@ -45,6 +51,9 @@ async function registerUser(req, res) {
             role: role || "dispatcher",
             phone: phone || null,
         });
+
+        console.log("4");
+
         await user.save();
 
         const token = generateToken(user._id);
@@ -74,7 +83,7 @@ async function registerUser(req, res) {
     } catch (error) {
         console.error("Register error:", error);
         res.status(500).json({
-            message: "Internal server error",
+            message: "Internal server error 1",
             status: false,
         });
     }
@@ -143,7 +152,7 @@ async function loginUser(req, res) {
     } catch (error) {
         console.error("Login error:", error);
         res.status(500).json({
-            message: "Internal server error",
+            message: "Internal server error 1",
             status: false,
         });
     }

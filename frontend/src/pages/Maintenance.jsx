@@ -5,6 +5,7 @@ import api from '../services/api';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
+import './Vehicles.css';
 import './Maintenance.css';
 
 // ── Constants ──

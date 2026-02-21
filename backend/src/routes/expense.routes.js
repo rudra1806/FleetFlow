@@ -7,6 +7,14 @@ const validate = require("../validators/validate");
 
 const expenseRoles = ["manager", "financial_analyst", "dispatcher"];
 
+// GET /api/expenses
+router.get(
+    "/",
+    authMiddleware,
+    authorize(...expenseRoles),
+    expenseController.getAllExpenses
+);
+
 // POST /api/expenses
 router.post(
     "/",

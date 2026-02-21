@@ -141,6 +141,61 @@ async function getDashboardStats(req, res) {
                 expenses: {
                     total: totalExpenses,
                 },
+                monthlyStats: await (async () => {
+                    const months = [];
+                    for (let i = 5; i >= 0; i--) {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() - i);
+                        months.push({
+                            month: d.toLocaleString('default', { month: 'short' }),
+                            year: d.getFullYear(),
+                            monthNum: d.getMonth() + 1,
+                            trips: 0,
+                            expenses: 0
+                        });
+                    }
+
+                    try {
+                        const Trip = require("../models/trip.model");
+                        const Expense = require("../models/expense.model");
+
+                        const sixMonthsAgo = new Date();
+                        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+                        sixMonthsAgo.setDate(1);
+                        sixMonthsAgo.setHours(0, 0, 0, 0);
+
+                        const [tripMonthly, expenseMonthly] = await Promise.all([
+                            Trip.aggregate([
+                                { $match: { createdAt: { $gte: sixMonthsAgo } } },
+                                {
+                                    $group: {
+                                        _id: { month: { $month: "$createdAt" }, year: { $year: "$createdAt" } },
+                                        count: { $sum: 1 }
+                                    }
+                                }
+                            ]),
+                            Expense.aggregate([
+                                { $match: { createdAt: { $gte: sixMonthsAgo } } },
+                                {
+                                    $group: {
+                                        _id: { month: { $month: "$createdAt" }, year: { $year: "$createdAt" } },
+                                        count: { $sum: 1 }
+                                    }
+                                }
+                            ])
+                        ]);
+
+                        months.forEach(m => {
+                            const tMatch = tripMonthly.find(t => t._id.month === m.monthNum && t._id.year === m.year);
+                            const eMatch = expenseMonthly.find(e => e._id.month === m.monthNum && e._id.year === m.year);
+                            if (tMatch) m.trips = tMatch.count;
+                            if (eMatch) m.expenses = eMatch.count;
+                        });
+                    } catch (e) {
+                        // Models might not be available
+                    }
+                    return months;
+                })(),
                 recentTrips,
                 recentMaintenance,
             },

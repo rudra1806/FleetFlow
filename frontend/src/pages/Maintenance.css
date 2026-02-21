@@ -55,6 +55,7 @@
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.2);
 }
+
 .icon-btn.start:hover {
     background: rgba(59, 130, 246, 0.25);
     box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
@@ -66,6 +67,7 @@
     background: rgba(16, 185, 129, 0.1);
     border: 1px solid rgba(16, 185, 129, 0.2);
 }
+
 .icon-btn.complete:hover {
     background: rgba(16, 185, 129, 0.25);
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);

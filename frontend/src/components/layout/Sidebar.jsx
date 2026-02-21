@@ -45,13 +45,15 @@ const Sidebar = () => {
             </nav>
 
             <div className="sidebar-footer">
-                <div className="user-profile">
-                    <div className="user-avatar">{user?.name?.charAt(0) || 'U'}</div>
-                    <div className="user-info">
-                        <p className="user-name">{user?.name || 'User'}</p>
-                        <p className="user-role">{user?.role || 'Manager'}</p>
+                <NavLink to="/profile" className="user-profile-link">
+                    <div className="user-profile">
+                        <div className="user-avatar">{user?.name?.charAt(0) || 'U'}</div>
+                        <div className="user-info">
+                            <p className="user-name">{user?.name || 'User'}</p>
+                            <p className="user-role">{user?.role || 'Manager'}</p>
+                        </div>
                     </div>
-                </div>
+                </NavLink>
                 <button onClick={logout} className="logout-btn">
                     <LogOut size={20} />
                     <span>Logout</span>
