@@ -1,6 +1,6 @@
 const Driver = require("../models/driver.model");
 
-// Create Driver
+// CREATE
 exports.createDriver = async (req, res) => {
   try {
     const driver = await Driver.create(req.body);
@@ -10,47 +10,66 @@ exports.createDriver = async (req, res) => {
   }
 };
 
-// Get All Drivers
+// GET ALL (with filters + pagination)
 exports.getDrivers = async (req, res) => {
   try {
-    const drivers = await Driver.find();
-    res.json(drivers);
+    const { status, page = 1, limit = 10 } = req.query;
+
+    const query = {};
+    if (status) query.status = status;
+
+    const drivers = await Driver.find(query)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Driver.countDocuments(query);
+
+    res.json({
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      drivers,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Get Single Driver
+// GET SINGLE
 exports.getDriverById = async (req, res) => {
-  try {
-    const driver = await Driver.findById(req.params.id);
-    if (!driver) return res.status(404).json({ message: "Not found" });
-    res.json(driver);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  const driver = await Driver.findById(req.params.id);
+  if (!driver) return res.status(404).json({ message: "Driver not found" });
+  res.json(driver);
 };
 
-// Update Driver
+// UPDATE
 exports.updateDriver = async (req, res) => {
-  try {
-    const driver = await Driver.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    res.json(driver);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+  const driver = await Driver.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
+  res.json(driver);
 };
 
-// Delete Driver
+// DELETE
 exports.deleteDriver = async (req, res) => {
-  try {
-    await Driver.findByIdAndDelete(req.params.id);
-    res.json({ message: "Driver deleted" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  await Driver.findByIdAndDelete(req.params.id);
+  res.json({ message: "Driver removed" });
+};
+
+// PERFORMANCE PROFILE
+exports.getDriverPerformance = async (req, res) => {
+  const driver = await Driver.findById(req.params.id);
+  if (!driver) return res.status(404).json({ message: "Driver not found" });
+
+  res.json({
+    name: driver.name,
+    totalTrips: driver.totalTrips,
+    completedTrips: driver.completedTrips,
+    completionRate: driver.completionRate,
+    safetyScore: driver.safetyScore,
+    licenseValid: driver.isLicenseValid,
+  });
 };

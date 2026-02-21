@@ -14,10 +14,7 @@ const driverSchema = new mongoose.Schema(
       trim: true,
     },
 
-    phone: {
-      type: String,
-      trim: true,
-    },
+    phone: String,
 
     licenseNumber: {
       type: String,
@@ -29,7 +26,7 @@ const driverSchema = new mongoose.Schema(
     licenseExpiry: {
       type: Date,
       required: true,
-      index: true, // for compliance checks
+      index: true,
     },
 
     safetyScore: {
@@ -41,14 +38,9 @@ const driverSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["on_duty", "on_trip", "off_duty", "suspended"],
-      default: "on_duty",
-    },
-
-    assignedVehicle: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Vehicle",
-      default: null,
+      enum: ["available", "on_trip", "off_duty", "suspended"],
+      default: "available",
+      index: true,
     },
 
     totalTrips: {
@@ -64,34 +56,18 @@ const driverSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
-// 🔹 Virtual: Completion Rate (%)
-driverSchema.virtual("completionRate").get(function () {
-  if (this.totalTrips === 0) return 0;
-  return ((this.completedTrips / this.totalTrips) * 100).toFixed(2);
-});
-
-
 // 🔹 Virtual: License Validity
 driverSchema.virtual("isLicenseValid").get(function () {
   return this.licenseExpiry > new Date();
 });
 
-
-// 🔹 Prevent manual setting of on_trip without assignment
-driverSchema.pre("save", function (next) {
-  if (this.status === "on_trip" && !this.assignedVehicle) {
-    return next(
-      new Error("Driver cannot be 'on_trip' without assigned vehicle")
-    );
-  }
-  next();
+// 🔹 Virtual: Completion Rate
+driverSchema.virtual("completionRate").get(function () {
+  if (this.totalTrips === 0) return 0;
+  return ((this.completedTrips / this.totalTrips) * 100).toFixed(2);
 });
 
-
-// 🔹 Include virtuals when converting to JSON
 driverSchema.set("toJSON", { virtuals: true });
 driverSchema.set("toObject", { virtuals: true });
-
 
 module.exports = mongoose.model("Driver", driverSchema);
