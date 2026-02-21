@@ -11,6 +11,7 @@ import Trips from './pages/Trips';
 import Maintenance from './pages/Maintenance';
 import Expenses from './pages/Expenses';
 import Analytics from './pages/Analytics';
+import Profile from './pages/Profile';
 import './components/layout/Layout.css';
 
 function App() {
@@ -24,9 +25,10 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* 🔐 Dashboard - All Logged Users */}
+          {/* 🔐 Dashboard + Profile - All Logged Users */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
 
           {/* 🚛 Vehicles — All roles can view, Manager can CRUD */}

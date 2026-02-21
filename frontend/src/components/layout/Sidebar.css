@@ -110,3 +110,14 @@
     color: var(--danger);
     background: rgba(239, 68, 68, 0.1);
 }
+
+.user-profile-link {
+    display: block;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    transition: var(--transition-fast);
+}
+
+.user-profile-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+}

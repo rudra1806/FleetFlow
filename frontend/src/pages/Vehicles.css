@@ -1,66 +1,18 @@
-/* ==========================================
-   FleetFlow - Vehicles Page Styles
-   ========================================== */
-
 .vehicles-page {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
-/* ── Stats Grid ── */
-.vehicle-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
-    gap: 1rem;
-}
-
-.stat-card-v {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.25rem !important;
-}
-
-.stat-card-v:hover {
-    transform: translateY(-2px);
-}
-
-.stat-title-v {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
-    text-transform: capitalize;
-}
-
-.stat-value-v {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.stat-icon-v {
-    width: 42px;
-    height: 42px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-/* ── Page Header ── */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
 }
 
 .header-search {
     display: flex;
     gap: 1rem;
-    align-items: center;
 }
 
 .search-input-wrapper {
@@ -72,7 +24,6 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--glass-border);
     width: 320px;
-    position: relative;
 }
 
 .search-input-wrapper input {
@@ -85,69 +36,6 @@
     font-size: 0.875rem;
 }
 
-.search-clear {
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    padding: 4px;
-    border-radius: 50%;
-    transition: var(--transition-fast);
-}
-
-.search-clear:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.1);
-}
-
-/* ── Filter Bar ── */
-.filter-bar {
-    display: flex;
-    align-items: flex-end;
-    gap: 1.25rem;
-    padding: 1rem 1.5rem;
-    border-radius: var(--radius-lg);
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.filter-group label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.filter-group select {
-    background: rgba(15, 23, 42, 0.6);
-    color: var(--text-primary);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-sm);
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    font-family: inherit;
-    min-width: 150px;
-    outline: none;
-    cursor: pointer;
-    transition: var(--transition-fast);
-    text-transform: capitalize;
-}
-
-.filter-group select:focus {
-    border-color: var(--accent-primary);
-}
-
-.results-count {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-/* ── Table Extras ── */
 .vehicle-info {
     display: flex;
     flex-direction: column;
@@ -168,11 +56,6 @@
     padding: 0.25rem 0.5rem;
     border-radius: var(--radius-sm);
     font-weight: 500;
-}
-
-.type-tag,
-.fuel-tag {
-    text-transform: capitalize;
 }
 
 .table-actions {
@@ -204,305 +87,116 @@
     color: var(--danger);
 }
 
-/* ── Pagination ── */
-.pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-}
-
-.page-info {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-/* ── Modal ── */
 .modal-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     z-index: 1000;
-    animation: fadeIn 0.2s ease-out;
-    padding: 1rem;
 }
 
-.modal-content {
-    width: 100%;
-    max-width: 720px;
-    max-height: 90vh;
+.modal {
+    background: var(--glass-bg, rgba(30, 41, 59, 0.95));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    padding: 2rem;
+    border-radius: 16px;
+    width: 460px;
+    max-height: 85vh;
     overflow-y: auto;
-    border-radius: var(--radius-xl);
-    animation: slideUp 0.25s ease-out;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    color: var(--text-primary, #f8fafc);
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 0.5rem;
 }
 
 .modal-header h3 {
-    font-size: 1.125rem;
-    font-weight: 600;
+    font-size: 1.25rem;
+    font-weight: 700;
 }
 
-.modal-close {
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    padding: 0.25rem;
-    border-radius: var(--radius-sm);
-    transition: var(--transition-fast);
-}
-
-.modal-close:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-/* ── Vehicle Form ── */
-.vehicle-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.form-field.full-width {
-    margin-top: 0.25rem;
-}
-
-.form-field label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.form-field .req {
-    color: var(--danger);
-}
-
-.form-field input,
-.form-field select,
-.form-field textarea {
+.modal input,
+.modal select,
+.modal textarea {
     background: rgba(15, 23, 42, 0.6);
-    color: var(--text-primary);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-sm);
-    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    color: var(--text-primary, #f8fafc);
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
     font-size: 0.875rem;
-    font-family: inherit;
     outline: none;
-    transition: var(--transition-fast);
+    transition: border-color 0.2s;
     width: 100%;
+    box-sizing: border-box;
 }
 
-.form-field input:focus,
-.form-field select:focus,
-.form-field textarea:focus {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+    border-color: var(--accent-primary, #3b82f6);
 }
 
-.form-field textarea {
-    resize: vertical;
-    min-height: 60px;
+.modal input::placeholder {
+    color: var(--text-secondary, #94a3b8);
 }
 
-.form-field select {
-    cursor: pointer;
-    text-transform: capitalize;
+.modal label {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #94a3b8);
+    margin-bottom: -8px;
 }
 
-.field-error {
-    font-size: 0.75rem;
-    color: var(--danger);
-}
-
-.form-actions {
+.modal-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--glass-border);
+    gap: 10px;
+    margin-top: 8px;
 }
 
-/* ── Delete Confirmation ── */
-.delete-confirm {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.delete-confirm p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.delete-warning {
-    color: var(--danger) !important;
-    font-size: 0.8rem !important;
-    font-weight: 500;
-}
-
-/* ── Toast ── */
-.toast {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1.25rem;
-    border-radius: var(--radius-md);
+.modal-actions button {
+    padding: 0.55rem 1.2rem;
+    border-radius: 8px;
     font-size: 0.875rem;
-    font-weight: 500;
-    z-index: 2000;
-    animation: slideInRight 0.3s ease-out;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
 }
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+.modal-actions button:first-child {
+    background: var(--accent-primary, #3b82f6);
+    color: #fff;
 }
 
-.toast-success {
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: var(--success);
+.modal-actions button:first-child:hover {
+    background: #2563eb;
 }
 
-.toast-error {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: var(--danger);
+.modal-actions button:last-child {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary, #94a3b8);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
 }
 
-.toast-close {
-    color: inherit;
-    opacity: 0.7;
-    display: flex;
-    align-items: center;
-    padding: 2px;
-    margin-left: 0.5rem;
-    border-radius: 50%;
-    transition: var(--transition-fast);
-}
-
-.toast-close:hover {
-    opacity: 1;
+.modal-actions button:last-child:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Responsive ── */
-@media (max-width: 768px) {
-    .vehicle-stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .page-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .header-search {
-        flex-direction: column;
-    }
-
-    .search-input-wrapper {
-        width: 100%;
-    }
-
-    .filter-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .filter-group select {
-        min-width: 100%;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-content {
-        max-width: 100%;
-    }
-}
-
-/* ── Extra badge / status styles (extend Table.css) ── */
-.badge.draft {
-    background: rgba(100, 116, 139, 0.1);
-    color: var(--text-muted);
-}
-
-.badge.completed {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--success);
-}
-
-.badge.scheduled {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--accent-primary);
-}
-
-.service-type {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-transform: capitalize;
-}
-
-.table-desc {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.cost-tag {
-    font-weight: 600;
-    color: var(--warning);
+.input-field {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    color: var(--text-primary, #f8fafc);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    outline: none;
 }
