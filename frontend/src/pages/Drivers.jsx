@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, Phone, Mail, Award, Truck, X } from 'lucide-react'
 import api from '../services/api';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
-import './Vehicles.css';
+import './Drivers.css';
 
 const DRIVER_STATUSES = [
     "on_duty",
@@ -25,6 +25,8 @@ const Drivers = () => {
     const [drivers, setDrivers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
 
     const [showModal, setShowModal] = useState(false);
     const [editingDriver, setEditingDriver] = useState(null);
@@ -33,7 +35,12 @@ const Drivers = () => {
     const fetchDrivers = async () => {
         try {
             setLoading(true);
-            const query = statusFilter ? `?status=${statusFilter}` : '';
+            let query = '?';
+
+            if (statusFilter) query += `status=${statusFilter}&`;
+            if (debouncedSearch) query += `search=${debouncedSearch}&`;
+
+            query += `page=1&limit=10`;
             const response = await api.get(`/drivers${query}`);
 
             if (response.data.status) {
@@ -48,7 +55,15 @@ const Drivers = () => {
 
     useEffect(() => {
         fetchDrivers();
-    }, [statusFilter]);
+    }, [statusFilter, debouncedSearch]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const openAddModal = () => {
         setEditingDriver(null);
@@ -182,6 +197,14 @@ const Drivers = () => {
         <div className="vehicles-page animate-fade-in">
             <div className="page-header">
                 <div className="header-search">
+                    <input
+                        type="text"
+                        placeholder="Search drivers..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="input-field"
+                    />
+
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -218,47 +241,64 @@ const Drivers = () => {
                             <X size={18} onClick={() => setShowModal(false)} style={{ cursor: "pointer" }} />
                         </div>
 
-                        <input
-                            placeholder="Name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
+                        <div className="form-group">
+                            <label>Name</label>
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            />
+                        </div>
 
-                        <input
-                            placeholder="Email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
+                        <div className="form-group">
+                            <label>Email</label>
+                            <input
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            />
+                        </div>
 
-                        <input
-                            placeholder="Phone"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        />
+                        <div className="form-group">
+                            <label>Phone</label>
+                            <input
+                                type="text"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            />
+                        </div>
 
-                        <input
-                            placeholder="License Number"
-                            value={formData.licenseNumber}
-                            onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                        />
+                        <div className="form-group">
+                            <label>License Number</label>
+                            <input
+                                type="text"
+                                value={formData.licenseNumber}
+                                onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
+                            />
+                        </div>
 
-                        <input
-                            type="date"
-                            value={formData.licenseExpiry}
-                            onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
-                        />
+                        <div className="form-group">
+                            <label>License Expiry</label>
+                            <input
+                                type="date"
+                                value={formData.licenseExpiry}
+                                onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
+                            />
+                        </div>
 
-                        <select
-                            value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        >
-                            {DRIVER_STATUSES.map(status => (
-                                <option key={status} value={status}>
-                                    {status.replace('_', ' ')}
-                                </option>
-                            ))}
-                        </select>
-
+                        <div className="form-group">
+                            <label>Status</label>
+                            <select
+                                value={formData.status}
+                                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            >
+                                {DRIVER_STATUSES.map(status => (
+                                    <option key={status} value={status}>
+                                        {status.replace('_', ' ')}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="modal-actions">
                             <button onClick={handleSubmit}>
                                 {editingDriver ? "Update" : "Create"}
