@@ -17,6 +17,8 @@ const express = require("express");
 const router = express.Router();
 const vehicleController = require("../controllers/vehicle.controller");
 const { authMiddleware, authorize } = require("../middleware/auth.middleware");
+const { createVehicleValidator, updateVehicleValidator, updateVehicleStatusValidator } = require("../validators/vehicle.validator");
+const validate = require("../validators/validate");
 
 // All four RBAC roles — used for read-only routes
 const allRoles = ["manager", "dispatcher", "safety_officer", "financial_analyst"];
@@ -54,6 +56,8 @@ router.post(
     "/",
     authMiddleware,
     authorize("manager"),
+    createVehicleValidator,
+    validate,
     vehicleController.createVehicle
 );
 
@@ -62,6 +66,8 @@ router.put(
     "/:id",
     authMiddleware,
     authorize("manager"),
+    updateVehicleValidator,
+    validate,
     vehicleController.updateVehicle
 );
 
@@ -78,6 +84,8 @@ router.patch(
     "/:id/status",
     authMiddleware,
     authorize("manager"),
+    updateVehicleStatusValidator,
+    validate,
     vehicleController.updateVehicleStatus
 );
 

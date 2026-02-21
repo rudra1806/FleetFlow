@@ -5,6 +5,8 @@ const User = require("./src/models/user.model");
 const Vehicle = require("./src/models/vehicle.model");
 const Driver = require("./src/models/driver.model");
 const Expense = require("./src/models/expense.model");
+const Trip = require("./src/models/trip.model");
+const Maintenance = require("./src/models/maintenance.model");
 
 async function seed() {
     try {
@@ -127,13 +129,12 @@ async function seed() {
             drivers.push(driver);
         }
 
-        // 4. Create expenses (3-4 general + 2 fuel logs)
+        // 4. Create expenses
         const existingExpenses = await Expense.countDocuments();
         if (existingExpenses > 0) {
             console.log(`⏩ ${existingExpenses} expenses already exist, skipping...`);
         } else {
             const expensesData = [
-                // Fuel logs
                 {
                     vehicle: vehicles[0]._id,
                     type: "fuel",
@@ -152,7 +153,6 @@ async function seed() {
                     notes: "Diesel refill at Indian Oil, Jaipur",
                     createdBy: manager._id,
                 },
-                // Insurance
                 {
                     vehicle: vehicles[0]._id,
                     type: "insurance",
@@ -161,7 +161,6 @@ async function seed() {
                     notes: "Annual comprehensive insurance renewal",
                     createdBy: manager._id,
                 },
-                // Maintenance expense
                 {
                     vehicle: vehicles[1]._id,
                     type: "maintenance",
@@ -170,7 +169,6 @@ async function seed() {
                     notes: "Brake pad replacement",
                     createdBy: manager._id,
                 },
-                // Other (toll)
                 {
                     vehicle: vehicles[0]._id,
                     type: "other",
@@ -179,7 +177,6 @@ async function seed() {
                     notes: "Toll charges — Ahmedabad to Mumbai expressway",
                     createdBy: manager._id,
                 },
-                // Another fuel log
                 {
                     vehicle: vehicles[2]._id,
                     type: "fuel",
@@ -195,12 +192,127 @@ async function seed() {
             console.log(`✅ ${expensesData.length} expenses created`);
         }
 
+        // 5. Create trips (3 completed + 1 draft)
+        const existingTrips = await Trip.countDocuments();
+        if (existingTrips > 0) {
+            console.log(`⏩ ${existingTrips} trips already exist, skipping...`);
+        } else {
+            const tripsData = [
+                {
+                    vehicle: vehicles[0]._id,
+                    driver: drivers[0]._id,
+                    cargoWeight: 3500,
+                    origin: "Ahmedabad",
+                    destination: "Mumbai",
+                    distance: 530,
+                    status: "completed",
+                    startOdometer: 40000,
+                    endOdometer: 40530,
+                    startDate: new Date("2026-01-15T06:00:00"),
+                    endDate: new Date("2026-01-15T16:00:00"),
+                    notes: "Regular goods delivery to Mumbai warehouse",
+                    createdBy: manager._id,
+                },
+                {
+                    vehicle: vehicles[1]._id,
+                    driver: drivers[1]._id,
+                    cargoWeight: 1200,
+                    origin: "Jaipur",
+                    destination: "Udaipur",
+                    distance: 395,
+                    status: "completed",
+                    startOdometer: 25000,
+                    endOdometer: 25395,
+                    startDate: new Date("2026-02-01T07:00:00"),
+                    endDate: new Date("2026-02-01T15:30:00"),
+                    notes: "Urgent medical supplies delivery",
+                    createdBy: manager._id,
+                },
+                {
+                    vehicle: vehicles[0]._id,
+                    driver: drivers[0]._id,
+                    cargoWeight: 4200,
+                    origin: "Mumbai",
+                    destination: "Pune",
+                    distance: 150,
+                    status: "completed",
+                    startOdometer: 42000,
+                    endOdometer: 42150,
+                    startDate: new Date("2026-02-10T08:00:00"),
+                    endDate: new Date("2026-02-10T12:00:00"),
+                    notes: "Return load from Mumbai to Pune depot",
+                    createdBy: manager._id,
+                },
+                {
+                    vehicle: vehicles[2]._id,
+                    driver: drivers[2]._id,
+                    cargoWeight: 80,
+                    origin: "Ahmedabad",
+                    destination: "Gandhinagar",
+                    distance: 30,
+                    status: "draft",
+                    notes: "Local document delivery — awaiting dispatch",
+                    createdBy: manager._id,
+                },
+            ];
+
+            await Trip.insertMany(tripsData);
+            console.log(`✅ ${tripsData.length} trips created`);
+        }
+
+        // 6. Create maintenance records (1 completed, 1 in_progress, 1 scheduled)
+        const existingMaintenance = await Maintenance.countDocuments();
+        if (existingMaintenance > 0) {
+            console.log(`⏩ ${existingMaintenance} maintenance records already exist, skipping...`);
+        } else {
+            const maintenanceData = [
+                {
+                    vehicle: vehicles[0]._id,
+                    serviceType: "oil_change",
+                    description: "Full synthetic oil change + oil filter replacement at 45,000 km",
+                    cost: 3500,
+                    serviceDate: new Date("2026-01-20"),
+                    completionDate: new Date("2026-01-20"),
+                    status: "completed",
+                    mechanic: "Prakash Auto Garage",
+                    notes: "Next oil change due at 55,000 km",
+                    createdBy: manager._id,
+                },
+                {
+                    vehicle: vehicles[1]._id,
+                    serviceType: "brake",
+                    description: "Front brake pad replacement and disc inspection",
+                    cost: 4500,
+                    serviceDate: new Date("2026-02-15"),
+                    status: "in_progress",
+                    mechanic: "Sharma Motors",
+                    notes: "Rear discs show 40% wear — schedule replacement next month",
+                    createdBy: manager._id,
+                },
+                {
+                    vehicle: vehicles[2]._id,
+                    serviceType: "general",
+                    description: "Annual fitness inspection and chain lubrication",
+                    cost: 1200,
+                    serviceDate: new Date("2026-03-01"),
+                    status: "scheduled",
+                    mechanic: "Two-Wheeler Service Centre",
+                    createdBy: manager._id,
+                },
+            ];
+
+            await Maintenance.insertMany(maintenanceData);
+            console.log(`✅ ${maintenanceData.length} maintenance records created`);
+        }
+
         console.log("\n🎉 Seed complete!");
         console.log("\n📋 Summary:");
-        console.log(`   Users:    ${await User.countDocuments()}`);
-        console.log(`   Vehicles: ${await Vehicle.countDocuments()}`);
-        console.log(`   Drivers:  ${await Driver.countDocuments()}`);
-        console.log(`   Expenses: ${await Expense.countDocuments()}`);
+        console.log(`   Users:       ${await User.countDocuments()}`);
+        console.log(`   Vehicles:    ${await Vehicle.countDocuments()}`);
+        console.log(`   Drivers:     ${await Driver.countDocuments()}`);
+        console.log(`   Expenses:    ${await Expense.countDocuments()}`);
+        console.log(`   Trips:       ${await Trip.countDocuments()}`);
+        console.log(`   Maintenance: ${await Maintenance.countDocuments()}`);
 
         process.exit(0);
     } catch (error) {

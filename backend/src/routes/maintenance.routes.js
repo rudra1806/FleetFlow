@@ -17,6 +17,8 @@ const express = require("express");
 const router = express.Router();
 const maintenanceController = require("../controllers/maintenance.controller");
 const { authMiddleware, authorize } = require("../middleware/auth.middleware");
+const { createMaintenanceValidator, updateMaintenanceValidator } = require("../validators/maintenance.validator");
+const validate = require("../validators/validate");
 
 // All four RBAC roles — used for read-only routes
 const allRoles = ["manager", "dispatcher", "safety_officer", "financial_analyst"];
@@ -55,6 +57,8 @@ router.post(
     "/",
     authMiddleware,
     authorize("manager"),
+    createMaintenanceValidator,
+    validate,
     maintenanceController.createMaintenance
 );
 
@@ -63,7 +67,17 @@ router.put(
     "/:id",
     authMiddleware,
     authorize("manager"),
+    updateMaintenanceValidator,
+    validate,
     maintenanceController.updateMaintenance
+);
+
+// DELETE /api/maintenance/:id — Delete scheduled maintenance
+router.delete(
+    "/:id",
+    authMiddleware,
+    authorize("manager"),
+    maintenanceController.deleteMaintenance
 );
 
 module.exports = router;

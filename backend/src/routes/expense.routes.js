@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const expenseController = require("../controllers/expense.controller");
 const { authMiddleware, authorize } = require("../middleware/auth.middleware");
-const { createExpenseValidator } = require("../validators/expense.validator");
+const { createExpenseValidator, updateExpenseValidator } = require("../validators/expense.validator");
 const validate = require("../validators/validate");
 
 const expenseRoles = ["manager", "financial_analyst", "dispatcher"];
@@ -31,6 +31,24 @@ router.get(
     authMiddleware,
     authorize(...expenseRoles),
     expenseController.getTotalCostPerVehicle
+);
+
+// PUT /api/expenses/:id
+router.put(
+    "/:id",
+    authMiddleware,
+    authorize(...expenseRoles),
+    updateExpenseValidator,
+    validate,
+    expenseController.updateExpense
+);
+
+// DELETE /api/expenses/:id
+router.delete(
+    "/:id",
+    authMiddleware,
+    authorize("manager"),
+    expenseController.deleteExpense
 );
 
 module.exports = router;

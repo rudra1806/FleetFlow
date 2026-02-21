@@ -156,4 +156,65 @@ module.exports = {
     createExpense,
     getExpensesByVehicle,
     getTotalCostPerVehicle,
+    updateExpense,
+    deleteExpense,
 };
+
+// PUT /api/expenses/:id — Update an expense
+async function updateExpense(req, res) {
+    try {
+        const expense = await Expense.findById(req.params.id);
+        if (!expense) {
+            return res.status(404).json({ message: "Expense not found", status: false });
+        }
+
+        const allowedFields = ["type", "amount", "liters", "date", "notes"];
+        const updates = {};
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        // If type is changed away from fuel, clear liters
+        if (updates.type && updates.type !== "fuel") {
+            updates.liters = null;
+        }
+
+        const updated = await Expense.findByIdAndUpdate(req.params.id, updates, {
+            new: true,
+            runValidators: true,
+        })
+            .populate("vehicle", "name licensePlate type")
+            .populate("createdBy", "name email");
+
+        res.status(200).json({
+            message: "Expense updated successfully",
+            status: true,
+            expense: updated,
+        });
+    } catch (error) {
+        console.error("Update expense error:", error);
+        res.status(500).json({ message: "Internal server error", status: false });
+    }
+}
+
+// DELETE /api/expenses/:id — Delete an expense
+async function deleteExpense(req, res) {
+    try {
+        const expense = await Expense.findById(req.params.id);
+        if (!expense) {
+            return res.status(404).json({ message: "Expense not found", status: false });
+        }
+
+        await Expense.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({
+            message: "Expense deleted successfully",
+            status: true,
+        });
+    } catch (error) {
+        console.error("Delete expense error:", error);
+        res.status(500).json({ message: "Internal server error", status: false });
+    }
+}

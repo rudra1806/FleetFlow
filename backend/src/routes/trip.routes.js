@@ -34,6 +34,16 @@ router.get(
     tripController.getTripById
 );
 
+// PUT /api/trips/:id (Edit draft trip)
+router.put(
+    "/:id",
+    authMiddleware,
+    authorize(...opsRoles),
+    updateTripValidator,
+    validate,
+    tripController.updateTrip
+);
+
 // PATCH /api/trips/:id/status
 router.patch(
     "/:id/status",

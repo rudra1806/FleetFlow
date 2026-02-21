@@ -324,4 +324,53 @@ module.exports = {
     getMaintenanceById,
     updateMaintenance,
     getMaintenanceByVehicle,
+    deleteMaintenance,
 };
+
+/**
+ * DELETE /api/maintenance/:id — Delete a maintenance record
+ *
+ * @access  Manager only
+ * @returns 200 + success | 404 | 400 if not in "scheduled" status
+ *
+ * Only scheduled maintenance can be deleted. In-progress or completed
+ * records have already affected vehicle status and should not be removed.
+ */
+async function deleteMaintenance(req, res) {
+    try {
+        const maintenance = await Maintenance.findById(req.params.id);
+        if (!maintenance) {
+            return res.status(404).json({
+                message: "Maintenance record not found",
+                status: false,
+            });
+        }
+
+        if (maintenance.status !== MAINTENANCE_STATUS.SCHEDULED) {
+            return res.status(400).json({
+                message: `Cannot delete maintenance with status '${maintenance.status}'. Only scheduled records can be deleted.`,
+                status: false,
+            });
+        }
+
+        // If vehicle was set to in_shop when this was created, restore to available
+        const vehicle = await Vehicle.findById(maintenance.vehicle);
+        if (vehicle && vehicle.status === VEHICLE_STATUS.IN_SHOP) {
+            vehicle.status = VEHICLE_STATUS.AVAILABLE;
+            await vehicle.save();
+        }
+
+        await Maintenance.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({
+            message: "Maintenance record deleted successfully",
+            status: true,
+        });
+    } catch (error) {
+        console.error("Delete maintenance error:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            status: false,
+        });
+    }
+}

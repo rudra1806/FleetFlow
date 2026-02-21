@@ -15,10 +15,27 @@ try {
     Expense = null;
 }
 
+// Helper: build a date range filter object from ?from= and ?to= query params
+function buildDateRange(req, dateField) {
+    const filter = {};
+    if (req.query.from) {
+        const from = new Date(req.query.from);
+        if (!isNaN(from)) filter[dateField] = { ...filter[dateField], $gte: from };
+    }
+    if (req.query.to) {
+        const to = new Date(req.query.to);
+        if (!isNaN(to)) filter[dateField] = { ...filter[dateField], $lte: to };
+    }
+    return filter;
+}
+
 // GET /api/analytics/fuel-efficiency — km/L per vehicle
+// Optional query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
 async function getFuelEfficiency(req, res) {
     try {
         const results = [];
+        const dateFilterTrip = buildDateRange(req, "startDate");
+        const dateFilterExpense = buildDateRange(req, "date");
 
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type currentOdometer"
@@ -36,6 +53,7 @@ async function getFuelEfficiency(req, res) {
                             status: "completed",
                             endOdometer: { $exists: true, $gt: 0 },
                             startOdometer: { $exists: true },
+                            ...dateFilterTrip,
                         },
                     },
                     {
@@ -57,6 +75,7 @@ async function getFuelEfficiency(req, res) {
                             vehicle: vehicle._id,
                             type: "fuel",
                             liters: { $exists: true, $gt: 0 },
+                            ...dateFilterExpense,
                         },
                     },
                     {
@@ -103,8 +122,11 @@ async function getFuelEfficiency(req, res) {
 }
 
 // GET /api/analytics/vehicle-roi — ROI per vehicle
+// Optional query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
 async function getVehicleROI(req, res) {
     try {
+        const dateFilterMaint = buildDateRange(req, "serviceDate");
+        const dateFilterExpense = buildDateRange(req, "date");
 
         const vehicles = await Vehicle.find().select(
             "name licensePlate type acquisitionCost"
@@ -114,7 +136,7 @@ async function getVehicleROI(req, res) {
 
         for (const vehicle of vehicles) {
             const maintAgg = await Maintenance.aggregate([
-                { $match: { vehicle: vehicle._id } },
+                { $match: { vehicle: vehicle._id, ...dateFilterMaint } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
             ]);
             const maintenanceCost = maintAgg.length > 0 ? maintAgg[0].total : 0;
@@ -123,7 +145,7 @@ async function getVehicleROI(req, res) {
             let otherExpenses = 0;
             if (Expense) {
                 const expAgg = await Expense.aggregate([
-                    { $match: { vehicle: vehicle._id } },
+                    { $match: { vehicle: vehicle._id, ...dateFilterExpense } },
                     {
                         $group: {
                             _id: "$type",
@@ -178,8 +200,12 @@ async function getVehicleROI(req, res) {
 }
 
 // GET /api/analytics/cost-per-km — operational cost per km per vehicle
+// Optional query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
 async function getCostPerKm(req, res) {
     try {
+        const dateFilterTrip = buildDateRange(req, "startDate");
+        const dateFilterMaint = buildDateRange(req, "serviceDate");
+        const dateFilterExpense = buildDateRange(req, "date");
 
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type"
@@ -197,6 +223,7 @@ async function getCostPerKm(req, res) {
                             status: "completed",
                             endOdometer: { $exists: true, $gt: 0 },
                             startOdometer: { $exists: true },
+                            ...dateFilterTrip,
                         },
                     },
                     {
@@ -212,7 +239,7 @@ async function getCostPerKm(req, res) {
             }
 
             const maintAgg = await Maintenance.aggregate([
-                { $match: { vehicle: vehicle._id } },
+                { $match: { vehicle: vehicle._id, ...dateFilterMaint } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
             ]);
             const maintenanceCost = maintAgg.length > 0 ? maintAgg[0].total : 0;
@@ -220,7 +247,7 @@ async function getCostPerKm(req, res) {
             let fuelCost = 0;
             if (Expense) {
                 const fuelAgg = await Expense.aggregate([
-                    { $match: { vehicle: vehicle._id, type: "fuel" } },
+                    { $match: { vehicle: vehicle._id, type: "fuel", ...dateFilterExpense } },
                     { $group: { _id: null, total: { $sum: "$amount" } } },
                 ]);
                 fuelCost = fuelAgg.length > 0 ? fuelAgg[0].total : 0;

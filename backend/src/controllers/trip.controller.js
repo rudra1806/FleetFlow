@@ -8,16 +8,48 @@ async function createTrip(req, res) {
     try {
         const { vehicle, driver, cargoWeight, origin, destination, distance, notes } = req.body;
 
-        // Verify vehicle exists and is available
+        // Verify vehicle exists
         const vehicleDoc = await Vehicle.findById(vehicle);
         if (!vehicleDoc) {
             return res.status(404).json({ message: "Vehicle not found", status: false });
         }
 
-        // Verify driver exists and is available
+        // Check vehicle is available
+        if (vehicleDoc.status !== VEHICLE_STATUS.AVAILABLE) {
+            return res.status(400).json({
+                message: `Vehicle is currently '${vehicleDoc.status}' and cannot be assigned`,
+                status: false,
+            });
+        }
+
+        // Check cargo weight does not exceed vehicle capacity
+        if (cargoWeight > vehicleDoc.maxCapacity) {
+            return res.status(400).json({
+                message: `Cargo weight (${cargoWeight} kg) exceeds vehicle max capacity (${vehicleDoc.maxCapacity} kg)`,
+                status: false,
+            });
+        }
+
+        // Verify driver exists
         const driverDoc = await Driver.findById(driver);
         if (!driverDoc) {
             return res.status(404).json({ message: "Driver not found", status: false });
+        }
+
+        // Check driver is on duty
+        if (driverDoc.status !== DRIVER_STATUS.ON_DUTY) {
+            return res.status(400).json({
+                message: `Driver is currently '${driverDoc.status}' and cannot be assigned`,
+                status: false,
+            });
+        }
+
+        // Check driver license is not expired
+        if (driverDoc.licenseExpiry && driverDoc.licenseExpiry <= new Date()) {
+            return res.status(400).json({
+                message: "Driver's license has expired. Cannot assign to trip.",
+                status: false,
+            });
         }
 
         const trip = new Trip({
@@ -34,8 +66,8 @@ async function createTrip(req, res) {
         await trip.save();
 
         const populated = await Trip.findById(trip._id)
-            .populate("vehicle", "name licensePlate type")
-            .populate("driver", "name phone licenseNumber")
+            .populate("vehicle", "name licensePlate type maxCapacity")
+            .populate("driver", "name phone licenseNumber licenseExpiry")
             .populate("createdBy", "name email");
 
         res.status(201).json({
@@ -48,6 +80,91 @@ async function createTrip(req, res) {
         res.status(500).json({ message: "Internal server error", status: false });
     }
 }
+
+// PUT /api/trips/:id — Update a draft trip's details
+async function updateTrip(req, res) {
+    try {
+        const trip = await Trip.findById(req.params.id);
+        if (!trip) {
+            return res.status(404).json({ message: "Trip not found", status: false });
+        }
+
+        if (trip.status !== TRIP_STATUS.DRAFT) {
+            return res.status(400).json({
+                message: "Only draft trips can be edited",
+                status: false,
+            });
+        }
+
+        const allowedFields = ["cargoWeight", "origin", "destination", "distance", "notes", "vehicle", "driver"];
+        const updates = {};
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        // If changing vehicle, validate capacity
+        if (updates.vehicle || updates.cargoWeight) {
+            const vehicleId = updates.vehicle || trip.vehicle;
+            const cargo = updates.cargoWeight || trip.cargoWeight;
+            const vehicleDoc = await Vehicle.findById(vehicleId);
+            if (!vehicleDoc) {
+                return res.status(404).json({ message: "Vehicle not found", status: false });
+            }
+            if (vehicleDoc.status !== VEHICLE_STATUS.AVAILABLE) {
+                return res.status(400).json({
+                    message: `Vehicle is currently '${vehicleDoc.status}' and cannot be assigned`,
+                    status: false,
+                });
+            }
+            if (cargo > vehicleDoc.maxCapacity) {
+                return res.status(400).json({
+                    message: `Cargo weight (${cargo} kg) exceeds vehicle max capacity (${vehicleDoc.maxCapacity} kg)`,
+                    status: false,
+                });
+            }
+        }
+
+        // If changing driver, validate license and status
+        if (updates.driver) {
+            const driverDoc = await Driver.findById(updates.driver);
+            if (!driverDoc) {
+                return res.status(404).json({ message: "Driver not found", status: false });
+            }
+            if (driverDoc.status !== DRIVER_STATUS.ON_DUTY) {
+                return res.status(400).json({
+                    message: `Driver is currently '${driverDoc.status}' and cannot be assigned`,
+                    status: false,
+                });
+            }
+            if (driverDoc.licenseExpiry && driverDoc.licenseExpiry <= new Date()) {
+                return res.status(400).json({
+                    message: "Driver's license has expired. Cannot assign to trip.",
+                    status: false,
+                });
+            }
+        }
+
+        const updated = await Trip.findByIdAndUpdate(req.params.id, updates, {
+            new: true,
+            runValidators: true,
+        })
+            .populate("vehicle", "name licensePlate type maxCapacity")
+            .populate("driver", "name phone licenseNumber")
+            .populate("createdBy", "name email");
+
+        res.status(200).json({
+            message: "Trip updated successfully",
+            status: true,
+            trip: updated,
+        });
+    } catch (error) {
+        console.error("Update trip error:", error);
+        res.status(500).json({ message: "Internal server error", status: false });
+    }
+}
+
 
 // GET /api/trips — List all trips with pagination & filters
 async function getAllTrips(req, res) {
@@ -209,6 +326,7 @@ async function updateTripStatus(req, res) {
 
 module.exports = {
     createTrip,
+    updateTrip,
     getAllTrips,
     getTripById,
     updateTripStatus,
