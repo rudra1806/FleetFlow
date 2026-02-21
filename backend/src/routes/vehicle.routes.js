@@ -1,11 +1,29 @@
+// ==========================================
+// FleetFlow - Vehicle Routes
+// ==========================================
+// Defines all REST API endpoints for the Vehicle module.
+// Mounted at "/api/vehicles" in app.js.
+//
+// Route Order Matters:
+//   /stats MUST be defined before /:id, otherwise Express
+//   treats "stats" as an :id parameter and tries to look it up.
+//
+// Access Control:
+//   - Read operations (GET)   → all authenticated roles
+//   - Write operations (POST/PUT/DELETE/PATCH) → manager only
+// ==========================================
+
 const express = require("express");
 const router = express.Router();
 const vehicleController = require("../controllers/vehicle.controller");
 const { authMiddleware, authorize } = require("../middleware/auth.middleware");
 
+// All four RBAC roles — used for read-only routes
 const allRoles = ["manager", "dispatcher", "safety_officer", "financial_analyst"];
 
-// GET /api/vehicles/stats — must come before /:id
+// ── Read Routes (all roles) ─────────────────────────────────
+
+// GET /api/vehicles/stats — Dashboard KPI cards (must come before /:id)
 router.get(
     "/stats",
     authMiddleware,
@@ -13,7 +31,7 @@ router.get(
     vehicleController.getVehicleStats
 );
 
-// GET /api/vehicles — list with pagination, filters, search
+// GET /api/vehicles — Paginated list with filters & search
 router.get(
     "/",
     authMiddleware,
@@ -21,15 +39,7 @@ router.get(
     vehicleController.getAllVehicles
 );
 
-// POST /api/vehicles — manager only
-router.post(
-    "/",
-    authMiddleware,
-    authorize("manager"),
-    vehicleController.createVehicle
-);
-
-// GET /api/vehicles/:id — single vehicle
+// GET /api/vehicles/:id — Single vehicle details
 router.get(
     "/:id",
     authMiddleware,
@@ -37,7 +47,17 @@ router.get(
     vehicleController.getVehicleById
 );
 
-// PUT /api/vehicles/:id — manager only
+// ── Write Routes (manager only) ────────────────────────────
+
+// POST /api/vehicles — Register a new vehicle
+router.post(
+    "/",
+    authMiddleware,
+    authorize("manager"),
+    vehicleController.createVehicle
+);
+
+// PUT /api/vehicles/:id — Update general vehicle fields
 router.put(
     "/:id",
     authMiddleware,
@@ -45,7 +65,7 @@ router.put(
     vehicleController.updateVehicle
 );
 
-// DELETE /api/vehicles/:id — manager only
+// DELETE /api/vehicles/:id — Remove vehicle from fleet
 router.delete(
     "/:id",
     authMiddleware,
@@ -53,7 +73,7 @@ router.delete(
     vehicleController.deleteVehicle
 );
 
-// PATCH /api/vehicles/:id/status — manager only
+// PATCH /api/vehicles/:id/status — Manual status transition (available ↔ retired)
 router.patch(
     "/:id/status",
     authMiddleware,

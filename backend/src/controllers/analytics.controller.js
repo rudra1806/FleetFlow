@@ -1,25 +1,59 @@
+// ==========================================
+// FleetFlow - Analytics Controller
+// ==========================================
+// Provides financial & operational analytics endpoints.
+// These endpoints power charts, tables, and CSV exports in the frontend.
+//
+// Functions:
+//   getFuelEfficiency — km/L per vehicle (Trip + Expense data)
+//   getVehicleROI     — ROI % per vehicle (acquisition vs operational cost)
+//   getCostPerKm      — ₹/km per vehicle (maintenance + fuel ÷ total km)
+//   exportReport      — CSV download for vehicles, maintenance, trips, expenses
+//
+// Design Notes:
+//   - Trip and Expense models are imported inside try/catch blocks
+//     because P2 (Trips) and P3 (Expenses) may not have deployed yet.
+//   - If a model isn't available, those metrics show 0 gracefully.
+//   - All aggregations use MongoDB aggregate pipelines for performance.
+// ==========================================
+
 const Vehicle = require("../models/vehicle.model");
 const Maintenance = require("../models/maintenance.model");
 const exportService = require("../services/export.service");
 
-// GET /api/analytics/fuel-efficiency — km/L per vehicle
+/**
+ * GET /api/analytics/fuel-efficiency — Calculate km/L for each vehicle
+ *
+ * @access  Manager, Financial Analyst
+ * @returns Array of vehicles with { totalKm, totalLiters, fuelEfficiency, unit: "km/L" }
+ *
+ * How it works:
+ *   1. Gets all non-retired vehicles
+ *   2. For each vehicle, aggregates total km from completed trips (P2)
+ *   3. Aggregates total fuel liters from fuel expense records (P3)
+ *   4. Calculates efficiency = totalKm / totalLiters
+ *   5. Returns results sorted by efficiency (best first)
+ *
+ * If Trip or Expense models are unavailable, those values default to 0.
+ */
 async function getFuelEfficiency(req, res) {
     try {
         const results = [];
 
-        // Try to get trip and expense data
+        // Safely import Trip & Expense models (may not exist yet)
         let Trip, Expense;
         try {
             Trip = require("../models/trip.model");
         } catch (e) {
-            Trip = null;
+            Trip = null; // P2 hasn't deployed Trip model yet
         }
         try {
             Expense = require("../models/expense.model");
         } catch (e) {
-            Expense = null;
+            Expense = null; // P3 hasn't deployed Expense model yet
         }
 
+        // Fetch all operational (non-retired) vehicles
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type currentOdometer"
         );
@@ -28,7 +62,8 @@ async function getFuelEfficiency(req, res) {
             let totalKm = 0;
             let totalLiters = 0;
 
-            // Get total km from completed trips
+            // Aggregate total km driven from completed trips
+            // Uses endOdometer - startOdometer for accurate distance
             if (Trip) {
                 const tripAgg = await Trip.aggregate([
                     {
@@ -51,7 +86,8 @@ async function getFuelEfficiency(req, res) {
                 totalKm = tripAgg.length > 0 ? tripAgg[0].totalKm : 0;
             }
 
-            // Get total fuel liters from expense records
+            // Aggregate total fuel liters consumed from expense records
+            // Only counts records with type "fuel" and valid liters field
             if (Expense) {
                 const fuelAgg = await Expense.aggregate([
                     {
@@ -71,10 +107,11 @@ async function getFuelEfficiency(req, res) {
                 totalLiters = fuelAgg.length > 0 ? fuelAgg[0].totalLiters : 0;
             }
 
+            // Calculate fuel efficiency (km per liter)
             const efficiency =
                 totalLiters > 0
                     ? parseFloat((totalKm / totalLiters).toFixed(2))
-                    : 0;
+                    : 0; // 0 if no fuel data available
 
             results.push({
                 vehicleId: vehicle._id,
@@ -105,7 +142,22 @@ async function getFuelEfficiency(req, res) {
     }
 }
 
-// GET /api/analytics/vehicle-roi — ROI per vehicle
+/**
+ * GET /api/analytics/vehicle-roi — Calculate ROI for each vehicle
+ *
+ * @access  Manager, Financial Analyst
+ * @returns Array of vehicles with { acquisitionCost, maintenanceCost, fuelCost, otherExpenses, totalOperationalCost, roi (%) }
+ *
+ * ROI Formula:
+ *   ROI = -(totalOperationalCost / acquisitionCost) × 100
+ *   Negative because this measures cost burden, not revenue.
+ *   A lower (more negative) ROI means higher cost of ownership.
+ *
+ * Cost components:
+ *   - Maintenance cost: sum of all maintenance.cost for this vehicle
+ *   - Fuel cost: sum of expenses where type = "fuel"
+ *   - Other expenses: sum of all other expense types
+ */
 async function getVehicleROI(req, res) {
     try {
         let Expense;
@@ -122,14 +174,14 @@ async function getVehicleROI(req, res) {
         const results = [];
 
         for (const vehicle of vehicles) {
-            // Total maintenance cost
+            // Aggregate total maintenance cost from all service records
             const maintAgg = await Maintenance.aggregate([
                 { $match: { vehicle: vehicle._id } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
             ]);
             const maintenanceCost = maintAgg.length > 0 ? maintAgg[0].total : 0;
 
-            // Total fuel cost
+            // Aggregate fuel cost and other expenses separately
             let fuelCost = 0;
             let otherExpenses = 0;
             if (Expense) {
@@ -148,8 +200,10 @@ async function getVehicleROI(req, res) {
                 });
             }
 
+            // Calculate total operational cost (all expense categories)
             const totalOperationalCost = maintenanceCost + fuelCost + otherExpenses;
             const acquisitionCost = vehicle.acquisitionCost || 0;
+            // ROI: negative % showing cost burden relative to purchase price
             const roi =
                 acquisitionCost > 0
                     ? parseFloat(
@@ -188,7 +242,20 @@ async function getVehicleROI(req, res) {
     }
 }
 
-// GET /api/analytics/cost-per-km — operational cost per km per vehicle
+/**
+ * GET /api/analytics/cost-per-km — Calculate operational cost per kilometer
+ *
+ * @access  Manager, Financial Analyst
+ * @returns Array of vehicles with { totalKm, maintenanceCost, fuelCost, totalCost, costPerKm, unit: "₹/km" }
+ *
+ * Formula:
+ *   costPerKm = (maintenanceCost + fuelCost) / totalKm
+ *   Sorted ascending — lowest cost per km first (most efficient).
+ *
+ * Useful for:
+ *   - Identifying high-cost vehicles that need replacement
+ *   - Comparing operational efficiency across vehicle types
+ */
 async function getCostPerKm(req, res) {
     try {
         let Trip, Expense;
@@ -286,12 +353,29 @@ async function getCostPerKm(req, res) {
     }
 }
 
-// GET /api/analytics/export/:type — Export data as CSV
+/**
+ * GET /api/analytics/export/:type — Export data as downloadable CSV file
+ *
+ * @access  Manager, Financial Analyst
+ * @param   type — "vehicles" | "maintenance" | "trips" | "expenses"
+ * @returns CSV file download with Content-Disposition header
+ *
+ * Each export type:
+ *   - vehicles: name, model, plate, type, status, capacity, odometer, fuel, region, cost
+ *   - maintenance: vehicle, plate, service type, description, cost, status, dates, mechanic
+ *   - trips: vehicle, plate, driver, origin, destination, cargo, status, dates (requires P2)
+ *   - expenses: vehicle, plate, type, amount, liters, date, notes (requires P3)
+ *
+ * Notes:
+ *   - Trips and Expenses exports return 400 if their modules aren't deployed yet.
+ *   - Uses export.service.js for CSV generation (no external dependencies).
+ */
 async function exportReport(req, res) {
     try {
         const { type } = req.params;
 
         switch (type) {
+            // ── Vehicles Export ──────────────────────────────
             case "vehicles": {
                 const vehicles = await Vehicle.find()
                     .populate("createdBy", "name")
@@ -316,11 +400,12 @@ async function exportReport(req, res) {
                 );
             }
 
+            // ── Maintenance Export ───────────────────────────
             case "maintenance": {
                 const records = await Maintenance.find()
                     .populate("vehicle", "name licensePlate")
                     .lean();
-                // Flatten nested vehicle fields
+                // Flatten nested vehicle ref into top-level fields for CSV
                 const flat = records.map((r) => ({
                     ...r,
                     vehicleName: r.vehicle?.name || "",
@@ -345,6 +430,7 @@ async function exportReport(req, res) {
                 );
             }
 
+            // ── Trips Export (requires P2's Trip model) ─────
             case "trips": {
                 try {
                     const Trip = require("../models/trip.model");
@@ -383,6 +469,7 @@ async function exportReport(req, res) {
                 }
             }
 
+            // ── Expenses Export (requires P3's Expense model) ─
             case "expenses": {
                 try {
                     const Expense = require("../models/expense.model");
