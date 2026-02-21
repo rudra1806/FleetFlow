@@ -133,8 +133,6 @@ const vehicleSchema = new mongoose.Schema(
 // ── Indexes ─────────────────────────────────────────────────
 // Compound index: speeds up dashboard queries like "all available trucks"
 vehicleSchema.index({ status: 1, type: 1 });
-// Unique lookup by plate (already unique, index for fast searches)
-vehicleSchema.index({ licensePlate: 1 });
 // Region-based filtering on list page
 vehicleSchema.index({ region: 1 });
 

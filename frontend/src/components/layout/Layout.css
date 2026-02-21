@@ -1,0 +1,30 @@
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-container {
+    padding: 90px 2rem 2rem;
+    /* space for fixed navbar */
+    min-height: 100vh;
+}
+
+.loading-screen {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+}
+
+.loading-screen .loader {
+    width: 40px;
+    height: 40px;
+}

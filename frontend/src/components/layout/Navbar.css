@@ -1,0 +1,80 @@
+.navbar {
+    height: 70px;
+    position: fixed;
+    top: 0;
+    left: 260px;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    z-index: 99;
+    border-right: none;
+    border-top: none;
+    border-left: none;
+    border-radius: 0;
+}
+
+.navbar-left h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--glass-border);
+    width: 240px;
+}
+
+.search-bar input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    outline: none;
+    width: 100%;
+}
+
+.nav-icon-btn {
+    position: relative;
+    color: var(--text-secondary);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: var(--danger);
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+}
+
+.nav-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--glass-border);
+}
+
+.nav-profile-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}

@@ -1,0 +1,88 @@
+.vehicles-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-search {
+    display: flex;
+    gap: 1rem;
+}
+
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(30, 41, 59, 0.4);
+    padding: 0 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+    width: 320px;
+}
+
+.search-input-wrapper input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    height: 40px;
+    width: 100%;
+    outline: none;
+    font-size: 0.875rem;
+}
+
+.vehicle-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.vehicle-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.vehicle-model {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.license-plate {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+}
+
+.table-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    color: var(--text-secondary);
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.icon-btn.edit:hover {
+    color: var(--accent-primary);
+}
+
+.icon-btn.delete:hover {
+    color: var(--danger);
+}
