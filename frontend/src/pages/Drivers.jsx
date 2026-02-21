@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Phone, Mail, Award, Truck, X } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Edit2, Trash2, Phone, Mail, Award, Truck, X, Star } from 'lucide-react';
 import api from '../services/api';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
@@ -158,6 +158,11 @@ const Drivers = () => {
                     <Award size={16} color="#f59e0b" />
                     <span>{driver.safetyScore}</span>
                     <br />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                        <Star size={14} fill="#fbbf24" color="#fbbf24" />
+                        <span>{driver.rating ? driver.rating.toFixed(1) : '0.0'}</span>
+                        <small style={{ color: '#888' }}>({driver.ratingCount || 0})</small>
+                    </div>
                     <small>{driver.completionRate}% completion</small>
                 </div>
             </td>
@@ -178,8 +183,41 @@ const Drivers = () => {
         </tr>
     );
 
+    const avgRating = useMemo(() => {
+        const ratedDrivers = drivers.filter(d => d.ratingCount > 0);
+        if (ratedDrivers.length === 0) return 0;
+        const total = ratedDrivers.reduce((acc, d) => acc + (d.rating || 0), 0);
+        return (total / ratedDrivers.length).toFixed(1);
+    }, [drivers]);
+
+    const onTripCount = drivers.filter(d => d.status === 'on_trip').length;
+
     return (
         <div className="vehicles-page animate-fade-in">
+            <div className="vehicle-stats-grid" style={{ marginBottom: '1.5rem' }}>
+                <div className="glass-card stat-card-v">
+                    <div className="stat-content-v">
+                        <p className="stat-title-v">Total Drivers</p>
+                        <h3 className="stat-value-v">{drivers.length}</h3>
+                    </div>
+                </div>
+                <div className="glass-card stat-card-v">
+                    <div className="stat-content-v">
+                        <p className="stat-title-v">On Trip</p>
+                        <h3 className="stat-value-v">{onTripCount}</h3>
+                    </div>
+                </div>
+                <div className="glass-card stat-card-v">
+                    <div className="stat-content-v">
+                        <p className="stat-title-v">Avg Rating</p>
+                        <h3 className="stat-value-v">
+                            <Star size={18} fill="#fbbf24" color="#fbbf24" style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                            {avgRating}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
             <div className="page-header">
                 <div className="header-search">
                     <select

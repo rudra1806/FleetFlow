@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Play, CheckCircle2, XCircle, Search, Filter, X, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, MapPin, Truck, Users } from 'lucide-react';
+import { Plus, Edit2, Play, CheckCircle2, XCircle, Search, Filter, X, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, MapPin, Truck, Users, Star } from 'lucide-react';
 import api from '../services/api';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
@@ -99,6 +99,7 @@ const Trips = () => {
     // Cancel dialog
     const [cancelTarget, setCancelTarget] = useState(null);
     const [cancelling, setCancelling] = useState(false);
+    const [rating, setRating] = useState(0);
 
     // Toast
     const [toast, setToast] = useState(null);
@@ -273,6 +274,7 @@ const Trips = () => {
             await api.patch(`/trips/${completeTarget._id}/status`, {
                 status: 'completed',
                 endOdometer: Number(endOdometer),
+                rating: Number(rating),
             });
             showToast('Trip completed successfully');
             setCompleteTarget(null);
@@ -348,7 +350,7 @@ const Trips = () => {
                             </button>
                         )}
                         {trip.status === 'dispatched' && (
-                            <button className="icon-btn complete" title="Complete" onClick={() => { setCompleteTarget(trip); setEndOdometer(''); }}>
+                            <button className="icon-btn complete" title="Complete" onClick={() => { setCompleteTarget(trip); setEndOdometer(''); setRating(0); }}>
                                 <CheckCircle2 size={16} />
                             </button>
                         )}
@@ -510,6 +512,21 @@ const Trips = () => {
                             placeholder="e.g. 15200"
                             min={completeTarget?.startOdometer || 0}
                         />
+                    </div>
+                    <div className="form-field" style={{ marginTop: '1rem' }}>
+                        <label>Driver Rating <span className="req">*</span></label>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                    key={star}
+                                    size={24}
+                                    onClick={() => setRating(star)}
+                                    fill={rating >= star ? "#fbbf24" : "none"}
+                                    color={rating >= star ? "#fbbf24" : "#64748b"}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                            ))}
+                        </div>
                     </div>
                     <div className="form-actions">
                         <Button variant="secondary" onClick={() => setCompleteTarget(null)}>Cancel</Button>

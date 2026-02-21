@@ -226,7 +226,7 @@ async function getTripById(req, res) {
 // This contains the core business logic for updating vehicle/driver states
 async function updateTripStatus(req, res) {
     try {
-        const { status, endOdometer } = req.body;
+        const { status, endOdometer, rating } = req.body;
         const trip = await Trip.findById(req.params.id);
 
         if (!trip) {
@@ -287,6 +287,13 @@ async function updateTripStatus(req, res) {
             driver.status = DRIVER_STATUS.ON_DUTY;
             driver.assignedVehicle = null;
             driver.completedTrips += 1;
+
+            if (rating && rating >= 1 && rating <= 5) {
+                trip.rating = rating;
+                const currentTotalScore = (driver.rating || 0) * (driver.ratingCount || 0);
+                driver.ratingCount += 1;
+                driver.rating = (currentTotalScore + rating) / driver.ratingCount;
+            }
 
             await Promise.all([trip.save(), vehicle.save(), driver.save()]);
         }
