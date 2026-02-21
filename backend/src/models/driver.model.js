@@ -39,6 +39,16 @@ const driverSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    ratingCount: {
+      type: Number,
+      default: 0,
+    },
 
     status: {
       type: String,

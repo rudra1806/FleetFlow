@@ -59,6 +59,12 @@ const tripSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        rating: {
+            type: Number,
+            min: 0,
+            max: 5,
+            default: 0,
+        },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
