@@ -22,10 +22,20 @@ exports.createDriver = async (req, res) => {
 // GET ALL (with filters + pagination)
 exports.getDrivers = async (req, res) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, search, page = 1, limit = 10 } = req.query;
 
     const query = {};
+
     if (status) query.status = status;
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { licenseNumber: { $regex: search, $options: "i" } }
+      ];
+    }
 
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
