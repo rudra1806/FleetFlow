@@ -1,0 +1,12 @@
+{
+  "name": "fleetflow",
+  "version": "1.0.0",
+  "description": "this is the fully functional vechocal management system",
+  "license": "ISC",
+  "author": "rudra sanandiya",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
