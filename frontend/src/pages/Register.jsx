@@ -1,10 +1,19 @@
 import { useState } from 'react';
-import { Mail, Lock, User, Phone, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, Phone, UserPlus, Briefcase } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import './Auth.css';
+
+const USER_ROLES = {
+    MANAGER: "manager",
+    DISPATCHER: "dispatcher",
+    SAFETY_OFFICER: "safety_officer",
+    FINANCIAL_ANALYST: "financial_analyst",
+};
+
+const USER_ROLES_ARRAY = Object.values(USER_ROLES);
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -12,8 +21,9 @@ const Register = () => {
         email: '',
         phone: '',
         password: '',
-        role: 'manager' // Default role for testing
+        role: USER_ROLES.MANAGER // default role
     });
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { register } = useAuth();
@@ -27,6 +37,7 @@ const Register = () => {
         e.preventDefault();
         setError('');
         setLoading(true);
+
         try {
             const result = await register(formData);
             if (result.status) {
@@ -96,6 +107,27 @@ const Register = () => {
                         onChange={handleChange}
                         required
                     />
+
+                    {/* 🔥 Role Dropdown */}
+                    <div className="input-group">
+                        <label className="input-label">
+                            <Briefcase size={16} style={{ marginRight: "6px" }} />
+                            Select Role
+                        </label>
+                        <select
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                            className="input-field"
+                            required
+                        >
+                            {USER_ROLES_ARRAY.map((role) => (
+                                <option key={role} value={role}>
+                                    {role.replace("_", " ").toUpperCase()}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                     <Button
                         type="submit"

@@ -18,22 +18,53 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+
+          {/* 🔓 Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
+          {/* 🔐 Dashboard - All Logged Users */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
+          </Route>
+
+          {/* 🚛 Vehicles, Drivers, Trips
+              Manager + Dispatcher */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'dispatcher']} />
+            }
+          >
             <Route path="/vehicles" element={<Vehicles />} />
             <Route path="/drivers" element={<Drivers />} />
             <Route path="/trips" element={<Trips />} />
+          </Route>
+
+          {/* 🛠 Maintenance
+              Manager + Safety Officer */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'safety_officer']} />
+            }
+          >
             <Route path="/maintenance" element={<Maintenance />} />
+          </Route>
+
+          {/* 💰 Expenses + Analytics
+              Manager + Financial Analyst */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'financial_analyst']} />
+            }
+          >
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/analytics" element={<Analytics />} />
           </Route>
 
-          {/* Fallback */}
+          {/* 🔁 Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
       </Router>
     </AuthProvider>
