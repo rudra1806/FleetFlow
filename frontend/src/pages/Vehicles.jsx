@@ -8,8 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import './Vehicles.css';
 
 // ── Constants ──
-const VEHICLE_TYPES = ['truck', 'van', 'bike'];
-const FUEL_TYPES = ['petrol', 'diesel', 'electric', 'hybrid', 'cng'];
+const VEHICLE_TYPES = ['truck', 'van', 'car', 'bus', 'bike'];
+const FUEL_TYPES = ['petrol', 'diesel', 'electric', 'cng', 'hybrid'];
 const VEHICLE_STATUSES = ['available', 'on_trip', 'in_shop', 'retired'];
 
 const EMPTY_FORM = {

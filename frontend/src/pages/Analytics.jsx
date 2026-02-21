@@ -38,9 +38,13 @@ const Analytics = () => {
     const [vehicleTypeFilter, setVehicleTypeFilter] = useState('all');
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const [exporting, setExporting] = useState(false);
-
     const roiChartRef = useRef(null);
     const fuelChartRef = useRef(null);
+    const statusChartRef = useRef(null);
+    const costPerKmChartRef = useRef(null);
+    const costBreakdownChartRef = useRef(null);
+    const distanceChartRef = useRef(null);
+    const typeCostChartRef = useRef(null);
 
     const getDateRange = () => {
         if (timePeriod === 'all') return {};
@@ -145,38 +149,65 @@ const Analytics = () => {
                 ? `${dateRange.from} to ${dateRange.to}`
                 : 'All Time';
             const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
 
-            doc.setFontSize(20);
-            doc.setTextColor(30, 41, 59);
-            doc.text('FleetFlow Analytics Report', 14, 20);
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Period: ${rangeText}`, 14, 28);
-            doc.text(`Vehicle Type: ${vehicleTypeFilter === 'all' ? 'All' : vehicleTypeFilter}`, 14, 34);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 40);
-
-            let currentY = 48;
-
-            if (roiChartRef.current) {
-                try {
-                    const roiCanvas = await html2canvas(roiChartRef.current, { backgroundColor: '#1e293b', scale: 2 });
-                    const roiImg = roiCanvas.toDataURL('image/png');
-                    const imgWidth = pageWidth - 28;
-                    const imgHeight = (roiCanvas.height * imgWidth) / roiCanvas.width;
-                    doc.setFontSize(13);
+            // Header helper
+            const addHeader = (doc, title) => {
+                doc.setFontSize(20);
+                doc.setTextColor(30, 41, 59);
+                doc.text('FleetFlow Analytics Report', 14, 20);
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Period: ${rangeText}`, 14, 28);
+                doc.text(`Vehicle Type: ${vehicleTypeFilter === 'all' ? 'All' : vehicleTypeFilter}`, 14, 34);
+                doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 40);
+                if (title) {
+                    doc.setFontSize(14);
                     doc.setTextColor(30, 41, 59);
-                    doc.text('Vehicle ROI Analysis', 14, currentY);
-                    currentY += 4;
-                    doc.addImage(roiImg, 'PNG', 14, currentY, imgWidth, imgHeight);
-                    currentY += imgHeight + 6;
-                } catch (e) {
-                    console.error('Error capturing ROI chart:', e);
+                    doc.text(title, 14, 50);
                 }
-            }
+            };
 
+            // Capture Chart helper
+            const addChartToDoc = async (doc, ref, title, yPos) => {
+                if (!ref.current) return yPos;
+                try {
+                    const canvas = await html2canvas(ref.current, {
+                        backgroundColor: '#1e293b',
+                        scale: 2,
+                        logging: false,
+                        useCORS: true
+                    });
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgWidth = pageWidth - 28;
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                    if (yPos + imgHeight + 10 > pageHeight) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+
+                    doc.setFontSize(12);
+                    doc.setTextColor(51, 65, 85);
+                    doc.text(title, 14, yPos);
+                    doc.addImage(imgData, 'PNG', 14, yPos + 5, imgWidth, imgHeight);
+                    return yPos + imgHeight + 20;
+                } catch (e) {
+                    console.error(`Error capturing ${title}:`, e);
+                    return yPos;
+                }
+            };
+
+            addHeader(doc);
+            let currentY = 55;
+
+            // 1. ROI Chart
+            currentY = await addChartToDoc(doc, roiChartRef, 'Vehicle ROI Analysis (%)', currentY);
+
+            // 1.1 ROI Table
             autoTable(doc, {
                 startY: currentY,
-                head: [['Vehicle', 'License Plate', 'Acquisition Cost', 'Maintenance', 'Fuel Cost', 'ROI (%)']],
+                head: [['Vehicle', 'License Plate', 'Acquisition', 'Maintenance', 'Fuel', 'ROI (%)']],
                 body: filteredRoiData.map((d) => [
                     d.name, d.licensePlate, d.acquisitionCost, d.maintenanceCost, d.fuelCost, d.roi,
                 ]),
@@ -184,30 +215,17 @@ const Analytics = () => {
                 headStyles: { fillColor: [59, 130, 246] },
                 styles: { fontSize: 8 },
             });
+            currentY = doc.lastAutoTable.finalY + 15;
 
+            // 2. Fuel Efficiency Chart
             doc.addPage();
-            currentY = 16;
+            currentY = 20;
+            currentY = await addChartToDoc(doc, fuelChartRef, 'Fuel Efficiency (km/L)', currentY);
 
-            if (fuelChartRef.current) {
-                try {
-                    const fuelCanvas = await html2canvas(fuelChartRef.current, { backgroundColor: '#1e293b', scale: 2 });
-                    const fuelImg = fuelCanvas.toDataURL('image/png');
-                    const imgWidth = pageWidth - 28;
-                    const imgHeight = (fuelCanvas.height * imgWidth) / fuelCanvas.width;
-                    doc.setFontSize(13);
-                    doc.setTextColor(30, 41, 59);
-                    doc.text('Fuel Efficiency (km/L)', 14, currentY);
-                    currentY += 4;
-                    doc.addImage(fuelImg, 'PNG', 14, currentY, imgWidth, imgHeight);
-                    currentY += imgHeight + 6;
-                } catch (e) {
-                    console.error('Error capturing Fuel chart:', e);
-                }
-            }
-
+            // 2.1 Fuel Table
             autoTable(doc, {
                 startY: currentY,
-                head: [['Vehicle', 'License Plate', 'Type', 'Total Km', 'Total Liters', 'Efficiency (km/L)']],
+                head: [['Vehicle', 'License Plate', 'Type', 'Total Km', 'Total L', 'km/L']],
                 body: filteredFuelData.map((d) => [
                     d.name, d.licensePlate, d.type, d.totalKm, d.totalLiters, d.fuelEfficiency,
                 ]),
@@ -215,12 +233,32 @@ const Analytics = () => {
                 headStyles: { fillColor: [16, 185, 129] },
                 styles: { fontSize: 8 },
             });
+            currentY = doc.lastAutoTable.finalY + 15;
 
-            // Cost per KM table
-            doc.addPage();
+            // 3. Status Distribution
+            currentY = await addChartToDoc(doc, statusChartRef, 'Vehicle Status Distribution', currentY);
+
+            // 3.1 Status Table
             autoTable(doc, {
-                startY: 16,
-                head: [['Vehicle', 'License Plate', 'Total Km', 'Maintenance ₹', 'Fuel ₹', 'Total ₹', '₹/km']],
+                startY: currentY,
+                head: [['Status', 'Count']],
+                body: statusData.map((d) => [d.name, d.value]),
+                theme: 'grid',
+                headStyles: { fillColor: [51, 65, 85] },
+                styles: { fontSize: 8 },
+                margin: { left: 14, right: 140 }, // Narrower table
+            });
+            currentY = doc.lastAutoTable.finalY + 15;
+
+            // 4. Cost Per KM
+            doc.addPage();
+            currentY = 20;
+            currentY = await addChartToDoc(doc, costPerKmChartRef, 'Operational Cost per Kilometer (₹/km)', currentY);
+
+            // 4.1 Cost Table
+            autoTable(doc, {
+                startY: currentY,
+                head: [['Vehicle', 'License Plate', 'Km', 'Maint ₹', 'Fuel ₹', 'Total ₹', '₹/km']],
                 body: filteredCostData.map((d) => [
                     d.name, d.licensePlate, d.totalKm, d.maintenanceCost, d.fuelCost, d.totalCost, d.costPerKm,
                 ]),
@@ -228,8 +266,58 @@ const Analytics = () => {
                 headStyles: { fillColor: [139, 92, 246] },
                 styles: { fontSize: 8 },
             });
+            currentY = doc.lastAutoTable.finalY + 15;
 
-            doc.save(`FleetFlow_Analytics_${new Date().toISOString().split('T')[0]}.pdf`);
+            // 5. Cost Breakdown
+            currentY = await addChartToDoc(doc, costBreakdownChartRef, 'Cost Breakdown: Maintenance vs Fuel', currentY);
+
+            // 5.1 Cost Breakdown Table
+            autoTable(doc, {
+                startY: currentY,
+                head: [['Vehicle', 'License Plate', 'Maintenance ₹', 'Fuel ₹', 'Total ₹']],
+                body: filteredCostData.map((d) => [
+                    d.name, d.licensePlate, d.maintenanceCost, d.fuelCost, d.totalCost,
+                ]),
+                theme: 'grid',
+                headStyles: { fillColor: [20, 184, 166] },
+                styles: { fontSize: 8 },
+            });
+            currentY = doc.lastAutoTable.finalY + 15;
+
+            // 6. Distance Traveled
+            doc.addPage();
+            currentY = 20;
+            currentY = await addChartToDoc(doc, distanceChartRef, 'Distance Traveled (km)', currentY);
+
+            // 6.1 Distance Table
+            autoTable(doc, {
+                startY: currentY,
+                head: [['Vehicle', 'License Plate', 'Type', 'Distance (km)']],
+                body: filteredCostData.map((d) => [d.name, d.licensePlate, d.type, d.totalKm]),
+                theme: 'grid',
+                headStyles: { fillColor: [249, 115, 22] },
+                styles: { fontSize: 8 },
+            });
+            currentY = doc.lastAutoTable.finalY + 15;
+
+            // 7. Avg Cost by Type
+            if (typeCostSummary.length > 0) {
+                currentY = await addChartToDoc(doc, typeCostChartRef, 'Average Cost by Vehicle Type', currentY);
+
+                // 7.1 Type Summary Table
+                autoTable(doc, {
+                    startY: currentY,
+                    head: [['Vehicle Type', 'Avg Maint ₹', 'Avg Fuel ₹', 'Avg ₹/km']],
+                    body: typeCostSummary.map((d) => [
+                        d.type, d.avgMaintenance, d.avgFuel, d.avgCostPerKm
+                    ]),
+                    theme: 'grid',
+                    headStyles: { fillColor: [236, 72, 153] },
+                    styles: { fontSize: 8 },
+                });
+            }
+
+            doc.save(`FleetFlow_Analytics_Complete_${new Date().toISOString().split('T')[0]}.pdf`);
         } catch (error) {
             console.error('PDF export error:', error);
         } finally {
@@ -378,7 +466,7 @@ const Analytics = () => {
                 </div>
 
                 {/* 3 — Vehicle Status Distribution (pie — half) */}
-                <div className="glass-card chart-container">
+                <div className="glass-card chart-container" ref={statusChartRef}>
                     <h3>Vehicle Status Distribution</h3>
                     <div className="chart-wrapper">
                         {statusData.length > 0 ? (
@@ -409,7 +497,7 @@ const Analytics = () => {
                 </div>
 
                 {/* 4 — Cost per KM (full width) */}
-                <div className="glass-card chart-container full-width">
+                <div className="glass-card chart-container full-width" ref={costPerKmChartRef}>
                     <h3>Operational Cost per Kilometer (₹/km)</h3>
                     <div className="chart-wrapper">
                         <ResponsiveContainer width="100%" height={300}>
@@ -426,7 +514,7 @@ const Analytics = () => {
                 </div>
 
                 {/* 5 — Cost Breakdown: Maintenance vs Fuel (stacked bar — half) */}
-                <div className="glass-card chart-container">
+                <div className="glass-card chart-container" ref={costBreakdownChartRef}>
                     <h3>Cost Breakdown: Maintenance vs Fuel</h3>
                     <div className="chart-wrapper">
                         <ResponsiveContainer width="100%" height={300}>
@@ -444,7 +532,7 @@ const Analytics = () => {
                 </div>
 
                 {/* 6 — Distance Traveled per Vehicle (line — half) */}
-                <div className="glass-card chart-container">
+                <div className="glass-card chart-container" ref={distanceChartRef}>
                     <h3>Distance Traveled (km)</h3>
                     <div className="chart-wrapper">
                         <ResponsiveContainer width="100%" height={300}>
@@ -462,7 +550,7 @@ const Analytics = () => {
 
                 {/* 7 — Avg Cost by Vehicle Type (radar — full width) */}
                 {typeCostSummary.length > 0 && (
-                    <div className="glass-card chart-container full-width">
+                    <div className="glass-card chart-container full-width" ref={typeCostChartRef}>
                         <h3>Average Cost by Vehicle Type</h3>
                         <div className="chart-wrapper">
                             <ResponsiveContainer width="100%" height={320}>
