@@ -21,7 +21,6 @@ async function createTrip(req, res) {
                 status: false,
             });
         }
-
         // Check cargo weight does not exceed vehicle capacity
         if (cargoWeight > vehicleDoc.maxCapacity) {
             return res.status(400).json({

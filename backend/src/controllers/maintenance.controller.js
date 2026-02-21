@@ -55,18 +55,12 @@ async function createMaintenance(req, res) {
                 status: false,
             });
         }
-
+        vehicleDoc.status = VEHICLE_STATUS.IN_SHOP; // Preemptively set to in_shop
         // Step 3: Create the maintenance record
         const maintenance = new Maintenance({
-            vehicle,
-            serviceType,
-            description,
-            cost,
-            serviceDate,
-            mechanic,
-            notes,
-            createdBy: req.user._id, // from auth middleware
-        });
+    ...req.body,
+    createdBy: req.user._id,
+});
 
         await maintenance.save();
 
