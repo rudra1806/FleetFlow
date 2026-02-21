@@ -56,9 +56,13 @@ const MAINTENANCE_STATUS_ARRAY = Object.values(MAINTENANCE_STATUS);
 
 const SERVICE_TYPES = {
     OIL_CHANGE: "oil_change",
-    TIRE: "tire",
-    BRAKE: "brake",
-    ENGINE: "engine",
+    TIRE_ROTATION: "tire_rotation",
+    BRAKE_SERVICE: "brake_service",
+    ENGINE_REPAIR: "engine_repair",
+    TRANSMISSION: "transmission",
+    ELECTRICAL: "electrical",
+    BODY_WORK: "body_work",
+    INSPECTION: "inspection",
     GENERAL: "general",
 };
 
@@ -77,6 +81,7 @@ const FUEL_TYPES = {
     PETROL: "petrol",
     DIESEL: "diesel",
     ELECTRIC: "electric",
+    HYBRID: "hybrid",
     CNG: "cng",
 };
 

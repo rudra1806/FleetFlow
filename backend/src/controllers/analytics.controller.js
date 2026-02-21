@@ -146,25 +146,32 @@ async function getFuelEfficiency(req, res) {
  * GET /api/analytics/vehicle-roi — Calculate ROI for each vehicle
  *
  * @access  Manager, Financial Analyst
- * @returns Array of vehicles with { acquisitionCost, maintenanceCost, fuelCost, otherExpenses, totalOperationalCost, roi (%) }
+ * @returns Array of vehicles with { acquisitionCost, revenue, maintenanceCost, fuelCost, otherExpenses, totalOperationalCost, roi (%) }
  *
- * ROI Formula:
- *   ROI = -(totalOperationalCost / acquisitionCost) × 100
- *   Negative because this measures cost burden, not revenue.
- *   A lower (more negative) ROI means higher cost of ownership.
+ * Spec Formula (Page 8):
+ *   ROI = ((Revenue - (Maintenance + Fuel)) / Acquisition Cost) × 100
+ *
+ * Revenue source:
+ *   - Sum of `fare` or `revenue` fields from completed trips (P2's Trip model)
+ *   - If Trip model unavailable or has no fare field, revenue defaults to 0.
  *
  * Cost components:
  *   - Maintenance cost: sum of all maintenance.cost for this vehicle
  *   - Fuel cost: sum of expenses where type = "fuel"
- *   - Other expenses: sum of all other expense types
+ *   - Other expenses: sum of all other expense types (insurance, tolls, etc.)
  */
 async function getVehicleROI(req, res) {
     try {
-        let Expense;
+        let Expense, Trip;
         try {
             Expense = require("../models/expense.model");
         } catch (e) {
             Expense = null;
+        }
+        try {
+            Trip = require("../models/trip.model");
+        } catch (e) {
+            Trip = null;
         }
 
         const vehicles = await Vehicle.find().select(
@@ -174,14 +181,45 @@ async function getVehicleROI(req, res) {
         const results = [];
 
         for (const vehicle of vehicles) {
-            // Aggregate total maintenance cost from all service records
+            // ── Revenue: sum from completed trips ──
+            let revenue = 0;
+            if (Trip) {
+                try {
+                    const revenueAgg = await Trip.aggregate([
+                        {
+                            $match: {
+                                vehicle: vehicle._id,
+                                status: "completed",
+                            },
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                total: {
+                                    $sum: {
+                                        $ifNull: [
+                                            "$fare",
+                                            { $ifNull: ["$revenue", 0] },
+                                        ],
+                                    },
+                                },
+                            },
+                        },
+                    ]);
+                    revenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
+                } catch (e) {
+                    revenue = 0; // Trip model doesn't have fare/revenue field
+                }
+            }
+
+            // ── Maintenance cost: aggregate from all service records ──
             const maintAgg = await Maintenance.aggregate([
                 { $match: { vehicle: vehicle._id } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
             ]);
             const maintenanceCost = maintAgg.length > 0 ? maintAgg[0].total : 0;
 
-            // Aggregate fuel cost and other expenses separately
+            // ── Expense costs: fuel + other categories ──
             let fuelCost = 0;
             let otherExpenses = 0;
             if (Expense) {
@@ -200,14 +238,14 @@ async function getVehicleROI(req, res) {
                 });
             }
 
-            // Calculate total operational cost (all expense categories)
+            // ── ROI Calculation (per spec formula) ──
+            // ROI = ((Revenue - (Maintenance + Fuel + Other)) / Acquisition Cost) × 100
             const totalOperationalCost = maintenanceCost + fuelCost + otherExpenses;
             const acquisitionCost = vehicle.acquisitionCost || 0;
-            // ROI: negative % showing cost burden relative to purchase price
             const roi =
                 acquisitionCost > 0
                     ? parseFloat(
-                          ((-(totalOperationalCost) / acquisitionCost) * 100).toFixed(2)
+                          (((revenue - totalOperationalCost) / acquisitionCost) * 100).toFixed(2)
                       )
                     : 0;
 
@@ -217,6 +255,7 @@ async function getVehicleROI(req, res) {
                 licensePlate: vehicle.licensePlate,
                 type: vehicle.type,
                 acquisitionCost,
+                revenue,
                 maintenanceCost,
                 fuelCost,
                 otherExpenses,
@@ -226,6 +265,7 @@ async function getVehicleROI(req, res) {
             });
         }
 
+        // Sort by ROI descending — best performing vehicles first
         results.sort((a, b) => b.roi - a.roi);
 
         res.status(200).json({

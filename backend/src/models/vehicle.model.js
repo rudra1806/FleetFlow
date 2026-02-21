@@ -14,7 +14,7 @@
 
 const mongoose = require("mongoose");
 const {
-    VEHICLE_TYPES_ARRAY,   // ["truck", "van", "car", "bus", "motorcycle"]
+    VEHICLE_TYPES_ARRAY,   // ["truck", "van", "bike"]
     VEHICLE_STATUS_ARRAY,  // ["available", "on_trip", "in_shop", "retired"]
     FUEL_TYPES_ARRAY,      // ["petrol", "diesel", "electric", "hybrid", "cng"]
 } = require("../utils/constants");

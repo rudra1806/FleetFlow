@@ -16,7 +16,7 @@
 const mongoose = require("mongoose");
 const {
     MAINTENANCE_STATUS_ARRAY,  // ["scheduled", "in_progress", "completed"]
-    SERVICE_TYPES_ARRAY,       // ["oil_change", "tire_rotation", "brake_service", ...]
+    SERVICE_TYPES_ARRAY,       // ["oil_change", "tire_rotation", "brake_service", "engine_repair", "transmission", "electrical", "body_work", "inspection", "general"]
 } = require("../utils/constants");
 
 const maintenanceSchema = new mongoose.Schema(

@@ -19,6 +19,9 @@ const { VEHICLE_STATUS, MAINTENANCE_STATUS } = require("../utils/constants");
  * GET /api/dashboard — Main dashboard KPIs
  *
  * @access  All authenticated roles
+ * @query   type   — filter vehicles by type (e.g. ?type=truck)
+ * @query   status — filter vehicles by status (e.g. ?status=available)
+ * @query   region — filter vehicles by region (case-insensitive partial match)
  * @returns {Object} Aggregated stats:
  *   - vehicles: { total, available, active, inShop, retired }
  *   - utilizationRate: % of operational fleet on trips
@@ -28,18 +31,29 @@ const { VEHICLE_STATUS, MAINTENANCE_STATUS } = require("../utils/constants");
  *   - expenses: { total (sum of all expense amounts) }
  *   - recentTrips: last 5 trips
  *   - recentMaintenance: last 5 maintenance records
+ *
+ * Spec Requirement (Page 2 — Command Center):
+ *   "Filters: By Vehicle Type (Truck, Van, Bike), Status, or Region."
  */
 async function getDashboardStats(req, res) {
     try {
+        // ── Build vehicle filter from query params (spec: Command Center filters) ──
+        const { type, status, region } = req.query;
+        const vehicleFilter = {};
+        if (type) vehicleFilter.type = type;
+        if (status) vehicleFilter.status = status;
+        if (region) vehicleFilter.region = { $regex: region, $options: "i" };
+
         // ── Vehicle Stats ──────────────────────────────────
-        // Count vehicles in each status category (5 parallel queries)
+        // When filters are applied, stats reflect only matching vehicles.
+        // When no filters, shows fleet-wide overview.
         const [totalVehicles, availableVehicles, activeFleet, inShopVehicles, retiredVehicles] =
             await Promise.all([
-                Vehicle.countDocuments(),
-                Vehicle.countDocuments({ status: VEHICLE_STATUS.AVAILABLE }),
-                Vehicle.countDocuments({ status: VEHICLE_STATUS.ON_TRIP }),
-                Vehicle.countDocuments({ status: VEHICLE_STATUS.IN_SHOP }),
-                Vehicle.countDocuments({ status: VEHICLE_STATUS.RETIRED }),
+                Vehicle.countDocuments(vehicleFilter),
+                Vehicle.countDocuments({ ...vehicleFilter, status: VEHICLE_STATUS.AVAILABLE }),
+                Vehicle.countDocuments({ ...vehicleFilter, status: VEHICLE_STATUS.ON_TRIP }),
+                Vehicle.countDocuments({ ...vehicleFilter, status: VEHICLE_STATUS.IN_SHOP }),
+                Vehicle.countDocuments({ ...vehicleFilter, status: VEHICLE_STATUS.RETIRED }),
             ]);
 
         // Operational fleet = total minus decommissioned vehicles
@@ -51,13 +65,21 @@ async function getDashboardStats(req, res) {
                 : 0;
 
         // ── Maintenance Stats ──────────────────────────────
-        // Count records that are NOT completed (i.e., active work)
-        const activeMaintenance = await Maintenance.countDocuments({
-            status: { $ne: MAINTENANCE_STATUS.COMPLETED },
-        });
+        // If vehicle filter is active, only count maintenance for matching vehicles
+        const maintenanceFilter = { status: { $ne: MAINTENANCE_STATUS.COMPLETED } };
+        const maintenanceHistoryFilter = {};
+        if (type || region) {
+            // Get IDs of filtered vehicles to scope maintenance queries
+            const filteredVehicleIds = await Vehicle.find(vehicleFilter).select("_id").lean();
+            const vehicleIds = filteredVehicleIds.map((v) => v._id);
+            maintenanceFilter.vehicle = { $in: vehicleIds };
+            maintenanceHistoryFilter.vehicle = { $in: vehicleIds };
+        }
+
+        const activeMaintenance = await Maintenance.countDocuments(maintenanceFilter);
 
         // Last 5 maintenance entries for the "Recent Activity" widget
-        const recentMaintenance = await Maintenance.find()
+        const recentMaintenance = await Maintenance.find(maintenanceHistoryFilter)
             .sort({ createdAt: -1 })
             .limit(5)
             .populate("vehicle", "name licensePlate")
@@ -116,6 +138,12 @@ async function getDashboardStats(req, res) {
 
         res.status(200).json({
             status: true,
+            // Include applied filters in response for frontend awareness
+            appliedFilters: {
+                type: type || null,
+                status: status || null,
+                region: region || null,
+            },
             dashboard: {
                 vehicles: {
                     total: totalVehicles,
