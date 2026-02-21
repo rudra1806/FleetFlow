@@ -1,14 +1,43 @@
+// ==========================================
+// FleetFlow - Maintenance Controller
+// ==========================================
+// Handles all CRUD operations for the Maintenance (service log) module.
+// This controller contains critical AUTO-SYNC logic that keeps the
+// Vehicle status in sync with maintenance events:
+//
+//   CREATE maintenance → vehicle.status = "in_shop"
+//   COMPLETE maintenance → vehicle.status = "available"
+//
+// Functions:
+//   createMaintenance       — POST /api/maintenance
+//   getAllMaintenance        — GET  /api/maintenance          (pagination, filters)
+//   getMaintenanceById      — GET  /api/maintenance/:id
+//   updateMaintenance       — PUT  /api/maintenance/:id      (auto-sync on completion)
+//   getMaintenanceByVehicle — GET  /api/maintenance/vehicle/:vehicleId
+// ==========================================
+
 const Maintenance = require("../models/maintenance.model");
 const Vehicle = require("../models/vehicle.model");
 const { VEHICLE_STATUS, MAINTENANCE_STATUS } = require("../utils/constants");
 
-// POST /api/maintenance — Create maintenance log & auto-set vehicle "in_shop"
+/**
+ * POST /api/maintenance — Create a maintenance log for a vehicle
+ *
+ * @access  Manager only
+ * @body    { vehicle (ObjectId), serviceType, description, cost, serviceDate?, mechanic?, notes? }
+ * @returns 201 + created maintenance | 404 if vehicle not found | 400 if vehicle on trip
+ *
+ * AUTO-SYNC LOGIC:
+ *   After saving the maintenance record, this function automatically
+ *   sets the referenced vehicle's status to "in_shop". This ensures the
+ *   vehicle cannot be assigned to trips while being serviced.
+ */
 async function createMaintenance(req, res) {
     try {
         const { vehicle, serviceType, description, cost, serviceDate, mechanic, notes } =
             req.body;
 
-        // Verify vehicle exists
+        // Step 1: Verify the vehicle exists in the database
         const vehicleDoc = await Vehicle.findById(vehicle);
         if (!vehicleDoc) {
             return res.status(404).json({
@@ -17,7 +46,8 @@ async function createMaintenance(req, res) {
             });
         }
 
-        // Block if vehicle is on a trip
+        // Step 2: Block maintenance creation for vehicles on active trips
+        // (the trip must be completed/cancelled before servicing)
         if (vehicleDoc.status === VEHICLE_STATUS.ON_TRIP) {
             return res.status(400).json({
                 message:
@@ -26,6 +56,7 @@ async function createMaintenance(req, res) {
             });
         }
 
+        // Step 3: Create the maintenance record
         const maintenance = new Maintenance({
             vehicle,
             serviceType,
@@ -34,12 +65,12 @@ async function createMaintenance(req, res) {
             serviceDate,
             mechanic,
             notes,
-            createdBy: req.user._id,
+            createdBy: req.user._id, // from auth middleware
         });
 
         await maintenance.save();
 
-        // AUTO-LOGIC: Set vehicle status to "in_shop"
+        // Step 4: AUTO-SYNC — mark the vehicle as "in_shop"
         vehicleDoc.status = VEHICLE_STATUS.IN_SHOP;
         await vehicleDoc.save();
 
@@ -61,9 +92,20 @@ async function createMaintenance(req, res) {
     }
 }
 
-// GET /api/maintenance — List all maintenance with pagination & filters
+/**
+ * GET /api/maintenance — List all maintenance records with pagination & filters
+ *
+ * @access  All authenticated roles
+ * @query   page (default 1), limit (default 10, max 100)
+ * @query   vehicle — filter by vehicle ObjectId
+ * @query   serviceType — filter by service category (e.g. "oil_change")
+ * @query   status — filter by maintenance status ("scheduled", "in_progress", "completed")
+ * @query   sortBy (default "serviceDate"), order ("asc" | "desc")
+ * @returns Paginated list: { maintenance[], count, total, totalPages, currentPage }
+ */
 async function getAllMaintenance(req, res) {
     try {
+        // Extract query params with defaults
         const {
             page = 1,
             limit = 10,
@@ -74,9 +116,11 @@ async function getAllMaintenance(req, res) {
             order = "desc",
         } = req.query;
 
+        // Clamp pagination values to safe ranges
         const pageNum = Math.max(1, parseInt(page));
         const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
 
+        // Build dynamic filter — only add keys that are provided
         const filter = {};
         if (vehicle) filter.vehicle = vehicle;
         if (serviceType) filter.serviceType = serviceType;
@@ -112,7 +156,13 @@ async function getAllMaintenance(req, res) {
     }
 }
 
-// GET /api/maintenance/:id — Single maintenance record
+/**
+ * GET /api/maintenance/:id — Get a single maintenance record by its MongoDB _id
+ *
+ * @access  All authenticated roles
+ * @param   id — MongoDB ObjectId from URL params
+ * @returns 200 + maintenance | 404 if not found | 400 if invalid ObjectId
+ */
 async function getMaintenanceById(req, res) {
     try {
         const maintenance = await Maintenance.findById(req.params.id)
@@ -145,7 +195,23 @@ async function getMaintenanceById(req, res) {
     }
 }
 
-// PUT /api/maintenance/:id — Update maintenance (auto vehicle-status on completion)
+/**
+ * PUT /api/maintenance/:id — Update a maintenance record
+ *
+ * @access  Manager only
+ * @body    Any maintenance field EXCEPT vehicle, createdBy, _id
+ * @returns 200 + updated record | 404 | 400 if already completed
+ *
+ * AUTO-SYNC LOGIC (on completion):
+ *   When status is changed to "completed":
+ *   1. completionDate is auto-set to current timestamp
+ *   2. The linked vehicle's status is restored to "available"
+ *   This frees the vehicle for new trip assignments.
+ *
+ * Notes:
+ *   - Once a record is completed, it becomes immutable (no further edits).
+ *   - The vehicle reference cannot be changed after creation.
+ */
 async function updateMaintenance(req, res) {
     try {
         const maintenance = await Maintenance.findById(req.params.id);
@@ -157,7 +223,7 @@ async function updateMaintenance(req, res) {
             });
         }
 
-        // If already completed, block further edits
+        // Completed records are immutable — no edits allowed
         if (maintenance.status === MAINTENANCE_STATUS.COMPLETED) {
             return res.status(400).json({
                 message: "Cannot edit a completed maintenance record",
@@ -166,15 +232,17 @@ async function updateMaintenance(req, res) {
         }
 
         const updates = { ...req.body };
-        delete updates.vehicle; // Can't change vehicle after creation
-        delete updates.createdBy;
+        // Strip protected fields that cannot be changed via update
+        delete updates.vehicle;   // Immutable after creation
+        delete updates.createdBy; // Audit field
         delete updates._id;
 
-        // If marking as completed, auto-set completionDate & free the vehicle
+        // AUTO-SYNC: If marking as completed, release the vehicle
         if (updates.status === MAINTENANCE_STATUS.COMPLETED) {
+            // Auto-set the completion timestamp
             updates.completionDate = new Date();
 
-            // AUTO-LOGIC: Set vehicle status back to "available"
+            // Restore vehicle status to "available" so it can be used again
             await Vehicle.findByIdAndUpdate(maintenance.vehicle, {
                 status: VEHICLE_STATUS.AVAILABLE,
             });
@@ -207,7 +275,14 @@ async function updateMaintenance(req, res) {
     }
 }
 
-// GET /api/maintenance/vehicle/:vehicleId — Maintenance history for a vehicle
+/**
+ * GET /api/maintenance/vehicle/:vehicleId — Full service history for one vehicle
+ *
+ * @access  All authenticated roles
+ * @param   vehicleId — MongoDB ObjectId of the vehicle
+ * @query   page (default 1), limit (default 10, max 100)
+ * @returns Paginated list of maintenance records sorted by serviceDate (newest first)
+ */
 async function getMaintenanceByVehicle(req, res) {
     try {
         const { page = 1, limit = 10 } = req.query;

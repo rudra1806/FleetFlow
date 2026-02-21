@@ -2,13 +2,23 @@ const Vehicle = require("../models/vehicle.model");
 const Maintenance = require("../models/maintenance.model");
 const exportService = require("../services/export.service");
 
+// Safely import Trip & Expense models (may not exist yet in early phases)
+let Trip, Expense;
+try {
+    Trip = require("../models/trip.model");
+} catch (e) {
+    Trip = null;
+}
+try {
+    Expense = require("../models/expense.model");
+} catch (e) {
+    Expense = null;
+}
+
 // GET /api/analytics/fuel-efficiency — km/L per vehicle
 async function getFuelEfficiency(req, res) {
     try {
         const results = [];
-
-        const Trip = require("../models/trip.model");
-        const Expense = require("../models/expense.model");
 
         const vehicles = await Vehicle.find({ status: { $ne: "retired" } }).select(
             "name licensePlate type currentOdometer"
@@ -18,7 +28,6 @@ async function getFuelEfficiency(req, res) {
             let totalKm = 0;
             let totalLiters = 0;
 
-            // Get total km from completed trips
             if (Trip) {
                 const tripAgg = await Trip.aggregate([
                     {
@@ -41,7 +50,6 @@ async function getFuelEfficiency(req, res) {
                 totalKm = tripAgg.length > 0 ? tripAgg[0].totalKm : 0;
             }
 
-            // Get total fuel liters from expense records
             if (Expense) {
                 const fuelAgg = await Expense.aggregate([
                     {
@@ -78,7 +86,6 @@ async function getFuelEfficiency(req, res) {
             });
         }
 
-        // Sort by efficiency descending
         results.sort((a, b) => b.fuelEfficiency - a.fuelEfficiency);
 
         res.status(200).json({
@@ -106,14 +113,12 @@ async function getVehicleROI(req, res) {
         const results = [];
 
         for (const vehicle of vehicles) {
-            // Total maintenance cost
             const maintAgg = await Maintenance.aggregate([
                 { $match: { vehicle: vehicle._id } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
             ]);
             const maintenanceCost = maintAgg.length > 0 ? maintAgg[0].total : 0;
 
-            // Total fuel cost
             let fuelCost = 0;
             let otherExpenses = 0;
             if (Expense) {
@@ -183,7 +188,6 @@ async function getCostPerKm(req, res) {
         const results = [];
 
         for (const vehicle of vehicles) {
-            // Total km driven
             let totalKm = 0;
             if (Trip) {
                 const tripAgg = await Trip.aggregate([
@@ -207,7 +211,6 @@ async function getCostPerKm(req, res) {
                 totalKm = tripAgg.length > 0 ? tripAgg[0].totalKm : 0;
             }
 
-            // Total fuel + maintenance cost
             const maintAgg = await Maintenance.aggregate([
                 { $match: { vehicle: vehicle._id } },
                 { $group: { _id: null, total: { $sum: "$cost" } } },
@@ -293,7 +296,6 @@ async function exportReport(req, res) {
                 const records = await Maintenance.find()
                     .populate("vehicle", "name licensePlate")
                     .lean();
-                // Flatten nested vehicle fields
                 const flat = records.map((r) => ({
                     ...r,
                     vehicleName: r.vehicle?.name || "",
@@ -319,6 +321,12 @@ async function exportReport(req, res) {
             }
 
             case "trips": {
+                if (!Trip) {
+                    return res.status(400).json({
+                        message: "Trip module is not available yet",
+                        status: false,
+                    });
+                }
                 try {
                     const trips = await Trip.find()
                         .populate("vehicle", "name licensePlate")
@@ -356,6 +364,12 @@ async function exportReport(req, res) {
             }
 
             case "expenses": {
+                if (!Expense) {
+                    return res.status(400).json({
+                        message: "Expense module is not available yet",
+                        status: false,
+                    });
+                }
                 try {
                     const expenses = await Expense.find()
                         .populate("vehicle", "name licensePlate")

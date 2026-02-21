@@ -1,11 +1,38 @@
+// ==========================================
+// FleetFlow - Dashboard Controller
+// ==========================================
+// Aggregates KPI data from ALL modules into a single API response.
+// This powers the main dashboard view in the frontend.
+//
+// Design Notes:
+//   - Each module (Trip, Driver, Expense) is imported inside a try/catch
+//     so the dashboard doesn't crash if P2/P3 haven't deployed their models yet.
+//   - If a module isn't available, its stats default to 0 / empty arrays.
+//   - All DB queries use Promise.all for parallel execution (faster response).
+// ==========================================
+
 const Vehicle = require("../models/vehicle.model");
 const Maintenance = require("../models/maintenance.model");
 const { VEHICLE_STATUS, MAINTENANCE_STATUS } = require("../utils/constants");
 
-// GET /api/dashboard — Main dashboard KPIs
+/**
+ * GET /api/dashboard — Main dashboard KPIs
+ *
+ * @access  All authenticated roles
+ * @returns {Object} Aggregated stats:
+ *   - vehicles: { total, available, active, inShop, retired }
+ *   - utilizationRate: % of operational fleet on trips
+ *   - trips: { pending, active, completed }
+ *   - drivers: { total, onDuty, offDuty }
+ *   - maintenance: { active (non-completed) }
+ *   - expenses: { total (sum of all expense amounts) }
+ *   - recentTrips: last 5 trips
+ *   - recentMaintenance: last 5 maintenance records
+ */
 async function getDashboardStats(req, res) {
     try {
-        // ── Vehicle Stats ──
+        // ── Vehicle Stats ──────────────────────────────────
+        // Count vehicles in each status category (5 parallel queries)
         const [totalVehicles, availableVehicles, activeFleet, inShopVehicles, retiredVehicles] =
             await Promise.all([
                 Vehicle.countDocuments(),
@@ -15,24 +42,29 @@ async function getDashboardStats(req, res) {
                 Vehicle.countDocuments({ status: VEHICLE_STATUS.RETIRED }),
             ]);
 
+        // Operational fleet = total minus decommissioned vehicles
         const operationalFleet = totalVehicles - retiredVehicles;
+        // Utilization: what % of operational vehicles are currently on trips
         const utilizationRate =
             operationalFleet > 0
                 ? parseFloat(((activeFleet / operationalFleet) * 100).toFixed(2))
                 : 0;
 
-        // ── Maintenance Stats ──
+        // ── Maintenance Stats ──────────────────────────────
+        // Count records that are NOT completed (i.e., active work)
         const activeMaintenance = await Maintenance.countDocuments({
             status: { $ne: MAINTENANCE_STATUS.COMPLETED },
         });
 
+        // Last 5 maintenance entries for the "Recent Activity" widget
         const recentMaintenance = await Maintenance.find()
             .sort({ createdAt: -1 })
             .limit(5)
             .populate("vehicle", "name licensePlate")
             .populate("createdBy", "name");
 
-        // ── Trip Stats (safe — P2 may not have pushed yet) ──
+        // ── Trip Stats (safe import — P2 may not have pushed yet) ──
+        // Wrapped in try/catch so dashboard works even without Trip model
         let pendingCargo = 0;
         let activeTrips = 0;
         let completedTrips = 0;
@@ -53,7 +85,8 @@ async function getDashboardStats(req, res) {
             // Trip model not available yet
         }
 
-        // ── Driver Stats (safe — P2 may not have pushed yet) ──
+        // ── Driver Stats (safe import — P2 may not have pushed yet) ──
+        // Same defensive try/catch pattern as Trip stats
         let totalDrivers = 0;
         let onDutyDrivers = 0;
         let offDutyDrivers = 0;
@@ -68,7 +101,8 @@ async function getDashboardStats(req, res) {
             // Driver model not available yet
         }
 
-        // ── Expense Stats (safe — P3 may not have pushed yet) ──
+        // ── Expense Stats (safe import — P3 may not have pushed yet) ──
+        // Uses MongoDB aggregation to sum all expense amounts
         let totalExpenses = 0;
         try {
             const Expense = require("../models/expense.model");
