@@ -100,8 +100,44 @@ async function userLoginController(req, res) {
 
 }
 
+async function userForgotPasswordController(req, res) {
+    const { email } = req.body
+
+    if (!email) {
+        return res.status(400).json({
+            message: "Email is required",
+            status: false
+        })
+    }
+
+    const user = await userModel.findOne({ email })
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found",
+            status: false
+        })
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "1d"
+    })
+
+    res.cookie("token", token)
+    res.status(200).json({
+        user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email
+        },
+        token
+    })
+    await emailService.sendForgotPasswordEmail(email, user.name)
+}
+
 
 module.exports = {
     userRegisterController,
-    userLoginController
+    userLoginController,
+    userForgotPasswordController
 }
