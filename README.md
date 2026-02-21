@@ -119,35 +119,35 @@ FleetFlow replaces inefficient, manual logbooks with a **smart digital managemen
 ## 🏗 Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Frontend (React 19 + Vite)            │
+┌────────────────────────────────────────────────────────┐
+│                    Frontend (React 19 + Vite)          │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
 │  │  Pages   │  │Components│  │ Context  │  │Services │ │
 │  │(19 files)│  │(12 files)│  │(AuthCtx) │  │(Axios)  │ │
 │  └────┬─────┘  └──────────┘  └──────────┘  └────┬────┘ │
-│       │              HTTP + JWT (Bearer Token)    │      │
-└───────┼──────────────────────────────────────────┼──────┘
-        │                                          │
-┌───────▼──────────────────────────────────────────▼──────┐
-│                    Backend (Express.js)                   │
-│  ┌──────┐  ┌──────────┐  ┌───────────┐  ┌───────────┐  │
-│  │Routes│→ │Middleware │→ │Validators │→ │Controllers│  │
-│  │(8)   │  │(Auth+Err)│  │(7 files)  │  │(8 files)  │  │
-│  └──────┘  └──────────┘  └───────────┘  └─────┬─────┘  │
-│                                                │        │
-│  ┌──────────┐  ┌──────────┐                    │        │
-│  │ Services │  │  Utils   │                    │        │
-│  │(Email,   │  │(Constants│                    │        │
-│  │ Export)  │  │ 9 enums) │                    │        │
-│  └──────────┘  └──────────┘                    │        │
-└────────────────────────────────────────────────┼────────┘
-                                                 │
-┌────────────────────────────────────────────────▼────────┐
-│                    MongoDB (Mongoose ODM)                 │
-│  ┌──────┐ ┌───────┐ ┌──────┐ ┌────┐ ┌───────┐ ┌──────┐│
-│  │User  │ │Vehicle│ │Driver│ │Trip│ │Expense│ │Maint.││
-│  └──────┘ └───────┘ └──────┘ └────┘ └───────┘ └──────┘│
-└─────────────────────────────────────────────────────────┘
+│       │              HTTP + JWT (Bearer Token)  │      │
+└───────┼─────────────────────────────────────────┼──────┘
+        │                                         │
+┌───────▼─────────────────────────────────────────▼─────┐
+│                    Backend (Express.js)               │
+│  ┌──────┐  ┌──────────┐  ┌───────────┐  ┌───────────┐ │
+│  │Routes│→ │Middleware│→ │Validators │→ │Controllers│ │
+│  │(8)   │  │(Auth+Err)│  │(7 files)  │  │(8 files)  │ │
+│  └──────┘  └──────────┘  └───────────┘  └─────┬─────┘ │
+│                                               │       │
+│  ┌──────────┐  ┌──────────┐                   │       │
+│  │ Services │  │  Utils   │                   │       │
+│  │(Email,   │  │(Constants│                   │       │
+│  │ Export)  │  │ 9 enums) │                   │       │
+│  └──────────┘  └──────────┘                   │       │
+└───────────────────────────────────────────────┼───────┘
+                                                │
+┌───────────────────────────────────────────────▼────────┐
+│                    MongoDB (Mongoose ODM)              │
+│  ┌──────┐ ┌───────┐ ┌──────┐ ┌────┐ ┌───────┐ ┌──────┐ │
+│  │User  │ │Vehicle│ │Driver│ │Trip│ │Expense│ │Maint.│ │
+│  └──────┘ └───────┘ └──────┘ └────┘ └───────┘ └──────┘ │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -500,16 +500,6 @@ User (createdBy) ──────┬──► Vehicle ◄──── Trip
 | **Trips** | vehicle, driver, cargoWeight, origin, destination, status, startOdometer, endOdometer | {vehicle, status}, {driver, status}, {startDate} |
 | **Expenses** | vehicle, trip?, type, amount, liters?, date | {vehicle, type}, {trip}, {date} |
 | **Maintenance** | vehicle, serviceType, cost, status, completionDate, mechanic | {vehicle, status}, {serviceDate} |
-
----
-
-## 👥 Team
-
-| Member | Role | Modules |
-|--------|------|---------|
-| **Rudra Sanandiya** | Lead (P1) | Vehicle Registry, Maintenance, Dashboard, Analytics, Route Wiring, Constants, Seed Data |
-| P2 | Developer | Drivers, Trips |
-| P3 | Developer | Expenses, Auth |
 
 ---
 
