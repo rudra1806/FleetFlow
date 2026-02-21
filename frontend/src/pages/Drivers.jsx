@@ -169,16 +169,42 @@ const Drivers = () => {
             </td>
 
             <td>
-                <div className="performance-score">
-                    <Award size={16} color="#f59e0b" />
-                    <span>{driver.safetyScore}</span>
-                    <br />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                <div className="performance-box">
+
+                    {/* Safety Score */}
+                    <div className={`safety-badge ${driver.safetyScore >= 90
+                        ? "excellent"
+                        : driver.safetyScore >= 70
+                            ? "good"
+                            : "poor"
+                        }`}>
+                        <Award size={14} />
+                        {driver.safetyScore}
+                    </div>
+
+                    {/* Rating */}
+                    <div className="rating-section">
                         <Star size={14} fill="#fbbf24" color="#fbbf24" />
                         <span>{driver.rating ? driver.rating.toFixed(1) : '0.0'}</span>
-                        <small style={{ color: '#888' }}>({driver.ratingCount || 0})</small>
+                        <small>({driver.ratingCount || 0})</small>
                     </div>
-                    <small>{driver.completionRate}% completion</small>
+
+                    {/* Completion */}
+                    <div className="completion-wrapper">
+                        <div className="progress-bar">
+                            <div
+                                className={`progress-fill ${driver.completionRate >= 80
+                                    ? "high"
+                                    : driver.completionRate >= 50
+                                        ? "medium"
+                                        : "low"
+                                    }`}
+                                style={{ width: `${driver.completionRate}%` }}
+                            />
+                        </div>
+                        <small>{driver.completionRate}% completion</small>
+                    </div>
+
                 </div>
             </td>
 
