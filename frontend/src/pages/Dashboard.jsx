@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
@@ -38,6 +39,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }) => (
 );
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState({
         fleet: { total: 0, in_shop: 0, available: 0, active: 0, retired: 0 },
         trips: { ongoing: 0 },
@@ -194,7 +196,7 @@ const Dashboard = () => {
                         <h3>Quick Actions</h3>
                     </div>
                     <div className="actions-flex">
-                        <button className="action-btn">
+                        <button className="action-btn" onClick={() => navigate('/expenses')}>
                             <div className="btn-icon-wrapper fuel">
                                 <Fuel size={20} />
                             </div>
@@ -205,7 +207,7 @@ const Dashboard = () => {
                             <ChevronRight size={18} />
                         </button>
 
-                        <button className="action-btn">
+                        <button className="action-btn" onClick={() => navigate('/maintenance')}>
                             <div className="btn-icon-wrapper service">
                                 <Wrench size={20} />
                             </div>
@@ -216,7 +218,7 @@ const Dashboard = () => {
                             <ChevronRight size={18} />
                         </button>
 
-                        <button className="action-btn">
+                        <button className="action-btn" onClick={() => navigate('/trips')}>
                             <div className="btn-icon-wrapper trip">
                                 <MapPin size={20} />
                             </div>
