@@ -4,6 +4,49 @@
     gap: 1.5rem;
 }
 
+/* ── Stats Grid (horizontal row) ── */
+.vehicle-stats-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.vehicle-stats-grid .stat-card-v {
+    flex: 1 1 0;
+    min-width: 160px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-content-v {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-title-v {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.stat-value-v {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.stat-icon-v {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 .page-header {
     display: flex;
     justify-content: space-between;
