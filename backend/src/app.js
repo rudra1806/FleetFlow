@@ -26,8 +26,24 @@ app.get("/", (req, res) => {
 
 // Routes
 const authRoutes = require("./routes/auth.routes");
+const vehicleRoutes = require("./routes/vehicle.routes");
+const maintenanceRoutes = require("./routes/maintenance.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
+const analyticsRoutes = require("./routes/analytics.routes");
 
 app.use("/api/auth", authRoutes);
+app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/analytics", analyticsRoutes);
+
+// P2 & P3 routes — uncomment when they push their branches
+// const driverRoutes = require("./routes/driver.routes");
+// const tripRoutes = require("./routes/trip.routes");
+// const expenseRoutes = require("./routes/expense.routes");
+// app.use("/api/drivers", driverRoutes);
+// app.use("/api/trips", tripRoutes);
+// app.use("/api/expenses", expenseRoutes);
 
 // Global error handler (must be after routes)
 app.use(errorHandler);
