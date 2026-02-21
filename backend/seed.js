@@ -280,7 +280,7 @@ async function seed() {
                 },
                 {
                     vehicle: vehicles[1]._id,
-                    serviceType: "brake",
+                    serviceType: "brake_service",
                     description: "Front brake pad replacement and disc inspection",
                     cost: 4500,
                     serviceDate: new Date("2026-02-15"),

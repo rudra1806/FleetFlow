@@ -17,6 +17,14 @@ router.post(
     expenseController.createExpense
 );
 
+// GET /api/expenses — Global list with filters & pagination
+router.get(
+    "/",
+    authMiddleware,
+    authorize(...expenseRoles),
+    expenseController.getAllExpenses
+);
+
 // GET /api/expenses/vehicle/:vehicleId
 router.get(
     "/vehicle/:vehicleId",

@@ -46,6 +46,57 @@ async function createExpense(req, res) {
     }
 }
 
+// GET /api/expenses — Get all expenses with pagination, filters, search
+async function getAllExpenses(req, res) {
+    try {
+        const {
+            page = 1,
+            limit = 10,
+            type,
+            vehicle,
+            search,
+            sortBy = "date",
+            order = "desc",
+        } = req.query;
+
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
+
+        const filter = {};
+        if (type) filter.type = type;
+        if (vehicle) filter.vehicle = vehicle;
+
+        const sortObj = {};
+        sortObj[sortBy] = order === "asc" ? 1 : -1;
+
+        const [expenses, total] = await Promise.all([
+            Expense.find(filter)
+                .sort(sortObj)
+                .skip((pageNum - 1) * limitNum)
+                .limit(limitNum)
+                .populate("vehicle", "name licensePlate type")
+                .populate("trip", "origin destination")
+                .populate("createdBy", "name email"),
+            Expense.countDocuments(filter),
+        ]);
+
+        res.status(200).json({
+            status: true,
+            count: expenses.length,
+            total,
+            totalPages: Math.ceil(total / limitNum),
+            currentPage: pageNum,
+            expenses,
+        });
+    } catch (error) {
+        console.error("Get all expenses error:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            status: false,
+        });
+    }
+}
+
 // GET /api/expenses/vehicle/:vehicleId — Get all expenses for a vehicle
 async function getExpensesByVehicle(req, res) {
     try {
@@ -154,6 +205,7 @@ async function getTotalCostPerVehicle(req, res) {
 
 module.exports = {
     createExpense,
+    getAllExpenses,
     getExpensesByVehicle,
     getTotalCostPerVehicle,
     updateExpense,

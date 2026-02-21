@@ -161,6 +161,7 @@ async function getVehicleROI(req, res) {
 
             const totalOperationalCost = maintenanceCost + fuelCost + otherExpenses;
             const acquisitionCost = vehicle.acquisitionCost || 0;
+            const revenue = 0; // No revenue model yet — placeholder for future trip billing
             const roi =
                 acquisitionCost > 0
                     ? parseFloat(

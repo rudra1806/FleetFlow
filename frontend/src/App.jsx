@@ -29,14 +29,21 @@ function App() {
             <Route path="/" element={<Dashboard />} />
           </Route>
 
-          {/* 🚛 Vehicles, Drivers, Trips
-              Manager + Dispatcher */}
+          {/* 🚛 Vehicles — All roles can view, Manager can CRUD */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'dispatcher', 'safety_officer', 'financial_analyst']} />
+            }
+          >
+            <Route path="/vehicles" element={<Vehicles />} />
+          </Route>
+
+          {/* 🚛 Drivers, Trips — Manager + Dispatcher */}
           <Route
             element={
               <ProtectedRoute allowedRoles={['manager', 'dispatcher']} />
             }
           >
-            <Route path="/vehicles" element={<Vehicles />} />
             <Route path="/drivers" element={<Drivers />} />
             <Route path="/trips" element={<Trips />} />
           </Route>
